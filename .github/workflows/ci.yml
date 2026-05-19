@@ -20,20 +20,20 @@ jobs:
 
       - name: Install the project
         run: uv sync --locked --all-extras --dev
-        working-directory: pipeline
+        working-directory: services/pipeline
 
       - name: Lint code
         run: uv run ruff check .
-        working-directory: pipeline
+        working-directory: services/pipeline
 
       - name: Format code
         run: uv run ruff check --fix .
-        working-directory: pipeline 
+        working-directory: services/pipeline
 
       - name: Check types
-        run: uv run pyreflex check .
-        working-directory: pipeline
+        run: uv run pyrefly check .
+        working-directory: services/pipeline
 
       - name: Run tests
         run: uv run pytest
-        working-directory: pipeline
+        working-directory: services/pipeline
