@@ -11,22 +11,22 @@ assignees: ''
 
 ## Who are you?
 
-## Which Sections is the bug in?
+## Which section is the bug in?
 
-<-- E.g., Pipeline -->
+<!-- E.g., Pipeline -->
 
 ## What is the bug?
 
-<-- E.g., edge case not handled -->
+<!-- E.g., edge case not handled -->
 
 ## How to reproduce it?
 
-<-- E.g., enter this input: ... -->
+<!-- E.g., enter this input: ... -->
 
-## What might be a the solution?
+## What might be the solution?
 
-<-- E.g., any suggestions on how to fix -->
+<!-- E.g., any suggestions on how to fix -->
 
 ## Any other notes?
 
-<-- E.g., any extra fixes, thoughts or resources -->
+<!-- E.g., any extra fixes, thoughts or resources -->
