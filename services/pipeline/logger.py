@@ -1,13 +1,19 @@
 import logging
 
+LOG_FORMAT = "{asctime} - {levelname} - {name} - {message}"
+LOG_DATEFMT = "%Y-%m-%d %H:%M"
 
-def get_logger() -> logging.Logger:
-    """Return a module-level logger."""
+
+def get_logger(name: str) -> logging.Logger:
+    """Return a named logger."""
+    return logging.getLogger(name)
+
+
+def configure_logging() -> None:
+    """Configure root logging. Call once from the entrypoint."""
     logging.basicConfig(
         level=logging.INFO,
-        format="{asctime} - {levelname} - {message}",
+        format=LOG_FORMAT,
         style="{",
-        datefmt="%Y-%m-%d %H:%M",
+        datefmt=LOG_DATEFMT,
     )
-
-    return logging.getLogger()

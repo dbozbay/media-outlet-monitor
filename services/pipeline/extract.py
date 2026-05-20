@@ -6,7 +6,7 @@ Fetches and parses articles from BBC News and OK! Magazine RSS feeds.
 from datetime import datetime
 
 import feedparser
-from logger import get_logger
+from logger import configure_logging, get_logger
 from pydantic import BaseModel, ValidationError, field_validator
 from pydantic.types import PastDatetime
 
@@ -15,7 +15,7 @@ FEEDS = {
     "OK! Magazine": "https://www.ok.co.uk/celebrity-news/?service=rss",
 }
 
-logger = get_logger()
+logger = get_logger(__name__)
 
 
 class Article(BaseModel):
@@ -91,4 +91,5 @@ def convert_time_struct_to_datetime(time_struct) -> datetime:
 
 
 if __name__ == "__main__":
+    configure_logging()
     articles = scrape_articles()
