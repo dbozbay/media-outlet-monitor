@@ -27,3 +27,39 @@ variable "reader_role_name" {
   default     = "c23-mesopelagic-reader-lambda-role"
   type        = string
 }
+
+variable "ecr_repositories" {
+  description = "Map of ECR repositories to create"
+  type = map(object({
+    name = string
+  }))
+  default = {
+    pipeline = {
+      name = "c23-mesopelagic-pipeline"
+    }
+    streamlit_dashboard = {
+      name = "c23-mesopelagic-streamlit-dashboard"
+    }
+    api_collection = {
+      name = "c23-mesopelagic-api-collection"
+    }
+  }
+}
+
+variable "ecr_image_tag_mutability" {
+  description = "Image tag mutability setting for ECR repositories"
+  default     = "MUTABLE"
+  type        = string
+}
+
+variable "ecr_image_retention_count" {
+  description = "Number of tagged images to retain in each ECR repository"
+  default     = 5
+  type        = number
+}
+
+variable "ecr_untagged_image_retention_days" {
+  description = "Number of days to retain untagged images in ECR repositories"
+  default     = 7
+  type        = number
+}

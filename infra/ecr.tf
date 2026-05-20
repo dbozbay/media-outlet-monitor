@@ -1,7 +1,8 @@
-# ECR Repository: Pipeline
-resource "aws_ecr_repository" "pipeline" {
-  name                 = "c23-mesopelagic-pipeline"
-  image_tag_mutability = "MUTABLE"
+# ECR Repositories
+resource "aws_ecr_repository" "repositories" {
+  for_each             = var.ecr_repositories
+  name                 = each.value.name
+  image_tag_mutability = var.ecr_image_tag_mutability
 
   image_scanning_configuration {
     scan_on_push = true
@@ -13,50 +14,34 @@ resource "aws_ecr_repository" "pipeline" {
   }
 }
 
-# ECR Repository: Streamlit Dashboard
-resource "aws_ecr_repository" "streamlit_dashboard" {
-  name                 = "c23-mesopelagic-streamlit-dashboard"
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-
-  tags = {
-    Environment = var.environment
-    Service     = "media-outlet-monitor"
-  }
-}
-
-# ECR Repository: API Collection
-resource "aws_ecr_repository" "api_collection" {
-  name                 = "c23-mesopelagic-api-collection"
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-
-  tags = {
-    Environment = var.environment
-    Service     = "media-outlet-monitor"
-  }
-}
-
-# Lifecycle Policy for Pipeline Repository
-resource "aws_ecr_lifecycle_policy" "pipeline_policy" {
-  repository = aws_ecr_repository.pipeline.name
+# ECR Lifecycle Policies
+resource "aws_ecr_lifecycle_policy" "repositories" {
+  for_each   = aws_ecr_repository.repositories
+  repository = each.value.name
 
   policy = jsonencode({
     rules = [
       {
         rulePriority = 1
-        description  = "Keep last 3 tagged images"
+        description  = "Expire untagged images after ${var.ecr_untagged_image_retention_days} days"
+        selection = {
+          tagStatus     = "untagged"
+          countType     = "sinceImagePushed"
+          countUnit     = "days"
+          countNumber   = var.ecr_untagged_image_retention_days
+        }
+        action = {
+          type = "expire"
+        }
+      },
+      {
+        rulePriority = 2
+        description  = "Keep last ${var.ecr_image_retention_count} tagged images"
         selection = {
           tagStatus       = "tagged"
           tagPatternList  = ["*"]
           countType       = "imageCountMoreThan"
-          countNumber     = 3
+          countNumber     = var.ecr_image_retention_count
         }
         action = {
           type = "expire"
@@ -64,66 +49,4 @@ resource "aws_ecr_lifecycle_policy" "pipeline_policy" {
       }
     ]
   })
-}
-
-# Lifecycle Policy for Streamlit Dashboard Repository
-resource "aws_ecr_lifecycle_policy" "streamlit_dashboard_policy" {
-  repository = aws_ecr_repository.streamlit_dashboard.name
-
-  policy = jsonencode({
-    rules = [
-      {
-        rulePriority = 1
-        description  = "Keep last 3 tagged images"
-        selection = {
-          tagStatus       = "tagged"
-          tagPatternList  = ["*"]
-          countType       = "imageCountMoreThan"
-          countNumber     = 3
-        }
-        action = {
-          type = "expire"
-        }
-      }
-    ]
-  })
-}
-
-# Lifecycle Policy for API Collection Repository
-resource "aws_ecr_lifecycle_policy" "api_collection_policy" {
-  repository = aws_ecr_repository.api_collection.name
-
-  policy = jsonencode({
-    rules = [
-      {
-        rulePriority = 1
-        description  = "Keep last 3 tagged images"
-        selection = {
-          tagStatus       = "tagged"
-          tagPatternList  = ["*"]
-          countType       = "imageCountMoreThan"
-          countNumber     = 3
-        }
-        action = {
-          type = "expire"
-        }
-      }
-    ]
-  })
-}
-
-# Outputs
-output "pipeline_repository_url" {
-  value       = aws_ecr_repository.pipeline.repository_url
-  description = "URL of the c23-mesopelagic-pipeline ECR repository for push/pull operations"
-}
-
-output "streamlit_dashboard_repository_url" {
-  value       = aws_ecr_repository.streamlit_dashboard.repository_url
-  description = "URL of the c23-mesopelagic-streamlit-dashboard ECR repository for push/pull operations"
-}
-
-output "api_collection_repository_url" {
-  value       = aws_ecr_repository.api_collection.repository_url
-  description = "URL of the c23-mesopelagic-api-collection ECR repository for push/pull operations"
 }
