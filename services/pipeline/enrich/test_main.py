@@ -1,5 +1,4 @@
 import pytest
-
 from main import (
     clean_source,
     extract_source_article_id,
@@ -54,16 +53,14 @@ def test_prepare_article_for_dynamodb_returns_expected_dictionary():
     result = prepare_article_for_dynamodb(article)
 
     assert result == {
-        "article_id": {"S": "ok_magazine#37161008"},
-        "target_name": {"NULL": True},
-        "at": {"S": "2026-05-19T13:33:23"},
-        "title": {"S": "Vanessa Feltz ready for 'The One'"},
-        "source": {"S": "OK! Magazine"},
-        "url": {
-            "S": "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008"
-        },
-        "sentiment_score": {"NULL": True},
-        "sentiment_label": {"NULL": True},
-        "keywords": {"NULL": True},
-        "description": {"S": "Vanessa Feltz has opened up about her love life."},
+        "article_id": "ok_magazine#37161008",
+        "target_name": "unknown",
+        "at": "2026-05-19T13:33:23",
+        "title": "Vanessa Feltz ready for 'The One'",
+        "source": "OK! Magazine",
+        "url": "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008",
+        "sentiment_score": None,
+        "sentiment_label": None,
+        "keywords": None,
+        "description": "Vanessa Feltz has opened up about her love life.",
     }
