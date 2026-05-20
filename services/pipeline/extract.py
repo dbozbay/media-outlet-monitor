@@ -6,9 +6,10 @@ Fetches and parses articles from BBC News and OK! Magazine RSS feeds.
 from datetime import datetime
 
 import feedparser
-from logger import configure_logging, get_logger
 from pydantic import BaseModel, ValidationError, field_validator
 from pydantic.types import PastDatetime
+
+from logger import configure_logging, get_logger
 
 FEEDS = {
     "BBC News": "http://feeds.bbci.co.uk/news/uk/rss.xml",

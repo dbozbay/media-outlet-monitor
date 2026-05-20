@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pytest
+
 from extract import Article
 from transform import (
     clean_source,

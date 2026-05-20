@@ -2,6 +2,8 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
+from pydantic import ValidationError
+
 from extract import (
     Article,
     convert_time_struct_to_datetime,
@@ -9,7 +11,6 @@ from extract import (
     parse_articles,
     scrape_articles,
 )
-from pydantic import ValidationError
 
 
 def test_article_valid():
