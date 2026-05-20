@@ -107,7 +107,3 @@ def handler(event: dict, context: dict) -> list[dict]:
     articles: list[Article] = scrape_articles()
     logger.info("Returning %d articles", len(articles))
     return [article.model_dump(mode="json") for article in articles]
-
-
-if __name__ == "__main__":
-    r = handler({}, {})
