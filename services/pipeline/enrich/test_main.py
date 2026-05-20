@@ -1,4 +1,5 @@
 import pytest
+
 from main import (
     clean_source,
     extract_source_article_id,
