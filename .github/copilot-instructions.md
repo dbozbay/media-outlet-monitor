@@ -34,7 +34,7 @@ When you see paths like `/[project]/features/[feature]/` in rules, replace [proj
 ## Python-specific guidelines
 
 - Use type hints for all function signatures and class attributes
-- Follow PEP 8 style guide (enforced by black and ruff)
+- Follow PEP 8 style guide (enforced by Ruff)
 - Use dataclasses or Pydantic models for data structures
 - Prefer composition over inheritance
 - Use context managers for resource management
