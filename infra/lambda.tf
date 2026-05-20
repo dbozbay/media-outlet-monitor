@@ -54,6 +54,6 @@ resource "aws_lambda_function" "upload" {
   tags = {
     Environment = var.environment
     Service     = "media-outlet-monitor"
-    Stage       = "upload"
+    Stage       = "load"
   }
 }
