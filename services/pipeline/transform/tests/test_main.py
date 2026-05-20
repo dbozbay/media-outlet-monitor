@@ -1,8 +1,5 @@
-from datetime import datetime
-
 import pytest
 
-from extract import Article
 from transform import (
     clean_source,
     extract_source_article_id,
@@ -47,13 +44,13 @@ def test_generate_article_id_combines_source_and_article_id():
 
 
 def test_transform_article_to_dict_returns_expected_dictionary():
-    article = Article(
-        title="Vanessa Feltz ready for 'The One'",
-        source="OK! Magazine",
-        link="https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008",
-        summary="Vanessa Feltz has opened up about her love life.",
-        pub_date=datetime(2026, 5, 19, 13, 33, 23),
-    )
+    article = {
+        "title": "Vanessa Feltz ready for 'The One'",
+        "source": "OK! Magazine",
+        "link": "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008",
+        "summary": "Vanessa Feltz has opened up about her love life.",
+        "pub_date": "2026-05-19T13:33:23",
+    }
     result = transform_article_to_dict(article)
 
     assert result == {

@@ -2,15 +2,14 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
-from pydantic import ValidationError
-
-from extract import (
+from main import (
     Article,
     convert_time_struct_to_datetime,
     fetch_feed,
     parse_articles,
     scrape_articles,
 )
+from pydantic import ValidationError
 
 
 def test_article_valid():
@@ -51,7 +50,7 @@ def test_fetch_feed_raises_on_bozo(sample_feed_result):
     sample_feed_result.bozo = True
     sample_feed_result.bozo_exception = Exception("malformed xml")
 
-    with patch("extract.feedparser.parse", return_value=sample_feed_result):
+    with patch("main.feedparser.parse", return_value=sample_feed_result):
         with pytest.raises(ValueError, match="Failed to parse feed"):
             fetch_feed("http://example.com/feed")
 
@@ -59,13 +58,13 @@ def test_fetch_feed_raises_on_bozo(sample_feed_result):
 def test_fetch_feed_raises_on_empty_entries(sample_feed_result):
     sample_feed_result.entries = []
 
-    with patch("extract.feedparser.parse", return_value=sample_feed_result):
+    with patch("main.feedparser.parse", return_value=sample_feed_result):
         with pytest.raises(ValueError, match="No entries found"):
             fetch_feed("http://example.com/feed")
 
 
 def test_fetch_feed_returns_entries(sample_feed_result):
-    with patch("extract.feedparser.parse", return_value=sample_feed_result):
+    with patch("main.feedparser.parse", return_value=sample_feed_result):
         entries = fetch_feed("http://example.com/feed")
     assert len(entries) == 1
     assert entries[0]["title"] == "Test Article Title"
@@ -94,7 +93,7 @@ def test_convert_time_struct_to_datetime():
 
 
 def test_scrape_articles_aggregates_all_feeds(sample_feed_result):
-    with patch("extract.feedparser.parse", return_value=sample_feed_result):
+    with patch("main.feedparser.parse", return_value=sample_feed_result):
         articles = scrape_articles()
 
     assert len(articles) == 2  # one entry per feed, 2 feeds
