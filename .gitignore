@@ -1,0 +1,10 @@
+# Ignore local terraform state and binaries
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Ignore Python virtual environments
+venv/
+__pycache__/
+*.pyc
