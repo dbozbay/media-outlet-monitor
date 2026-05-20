@@ -65,6 +65,7 @@ def prepare_articles_for_dynamodb(articles: list[dict]) -> list[dict]:
 
 def handler(event: list[dict], context: dict) -> list[dict]:
     """AWS Lambda handler that transforms serialized articles into DynamoDB-ready dicts."""
+    configure_logging()
     logger.info("Enrich handler received %d articles", len(event))
     ready_articles = prepare_articles_for_dynamodb(event)
     logger.info("Prepared %d articles for DynamoDB", len(ready_articles))
