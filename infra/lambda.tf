@@ -7,6 +7,10 @@ resource "aws_lambda_function" "extract" {
   timeout        = 60
   memory_size    = 128
 
+  image_config {
+    command = ["main.handler"]
+  }
+
   tags = {
     Environment = var.environment
     Service     = "media-outlet-monitor"
@@ -21,7 +25,11 @@ resource "aws_lambda_function" "enrich" {
   package_type   = "Image"
   image_uri      = "${aws_ecr_repository.pipeline.repository_url}:enrich"
   timeout        = 60
-  memory_size    = 128
+  memory_size    = 1024
+
+  image_config {
+    command = ["main.handler"]
+  }
 
   tags = {
     Environment = var.environment
@@ -38,6 +46,10 @@ resource "aws_lambda_function" "upload" {
   image_uri      = "${aws_ecr_repository.pipeline.repository_url}:load"
   timeout        = 60
   memory_size    = 128
+
+  image_config {
+    command = ["main.handler"]
+  }
 
   tags = {
     Environment = var.environment
