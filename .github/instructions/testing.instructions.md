@@ -42,11 +42,8 @@ Examples:
 Aim for high coverage but focus on meaningful tests:
 
 ```bash
-# Run with coverage
-pytest --cov=src --cov-report=html --cov-report=term
-
-# Minimum coverage threshold
-pytest --cov=src --cov-fail-under=80
+# Run tests from the pipeline service
+cd services/pipeline && uv run pytest
 ```
 
 ## Best Practices
