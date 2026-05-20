@@ -1,6 +1,8 @@
 from datetime import datetime
-from dataclasses import dataclass
 
+import pytest
+
+from extract import Article
 from transform import (
     clean_source,
     extract_source_article_id,
@@ -9,57 +11,49 @@ from transform import (
 )
 
 
-@dataclass
-class MockArticle:
-    title: str
-    source: str
-    link: str
-    summary: str
-    pub_date: datetime
-
-
-def test_extract_source_article_id_for_bbc_url():
-    url = "https://www.bbc.com/news/articles/c9weyz8nk4ro#2"
-
+@pytest.mark.parametrize(
+    "url, expected_id",
+    [
+        ("https://www.bbc.com/news/articles/c9weyz8nk4ro#2", "c9weyz8nk4ro"),
+        (
+            "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008",
+            "37161008",
+        ),
+        ("https://www.example.com/news/12345", "12345"),
+    ],
+)
+def test_extract_source_article_id(url, expected_id):
     result = extract_source_article_id(url)
-
-    assert result == "c9weyz8nk4ro"
-
-
-def test_extract_source_article_id_for_ok_magazine_url():
-    url = "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008"
-
-    result = extract_source_article_id(url)
-
-    assert result == "37161008"
+    assert result == expected_id
 
 
-def test_clean_source_removes_special_characters_and_spaces():
-    source = "OK! Magazine"
-
+@pytest.mark.parametrize(
+    "source, expected",
+    [
+        ("OK! Magazine", "ok_magazine"),
+        ("BBC News", "bbc_news"),
+    ],
+)
+def test_clean_source_removes_special_characters_and_spaces(source, expected):
     result = clean_source(source)
-
-    assert result == "ok_magazine"
+    assert result == expected
 
 
 def test_generate_article_id_combines_source_and_article_id():
     source = "OK! Magazine"
     url = "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008"
-
     result = generate_article_id(source, url)
-
     assert result == "ok_magazine#37161008"
 
 
 def test_transform_article_to_dict_returns_expected_dictionary():
-    article = MockArticle(
+    article = Article(
         title="Vanessa Feltz ready for 'The One'",
         source="OK! Magazine",
         link="https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008",
         summary="Vanessa Feltz has opened up about her love life.",
         pub_date=datetime(2026, 5, 19, 13, 33, 23),
     )
-
     result = transform_article_to_dict(article)
 
     assert result == {
