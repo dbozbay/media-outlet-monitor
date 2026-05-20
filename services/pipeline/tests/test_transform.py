@@ -8,6 +8,7 @@ from transform import (
     transform_article_to_dict,
 )
 
+
 @dataclass
 class MockArticle:
     title: str
@@ -15,6 +16,7 @@ class MockArticle:
     link: str
     summary: str
     pub_date: datetime
+
 
 def test_extract_source_article_id_for_bbc_url():
     url = "https://www.bbc.com/news/articles/c9weyz8nk4ro#2"

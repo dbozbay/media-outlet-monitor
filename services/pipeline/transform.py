@@ -1,6 +1,7 @@
 import re
 from urllib.parse import urlparse
 
+
 def extract_source_article_id(url: str) -> str:
     """Extracts a unique article ID from the URL based on known patterns for each source."""
     bbc_match = re.search(r"/articles/([a-zA-Z0-9]+)", url)
@@ -42,4 +43,3 @@ def transform_article_to_dict(article) -> dict:
         "keywords": [],
         "description": article.summary,
     }
-
