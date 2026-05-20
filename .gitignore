@@ -3,3 +3,8 @@
 *.tfstate
 *.tfstate.*
 .terraform.lock.hcl
+
+# Ignore Python virtual environments
+venv/
+__pycache__/
+*.pyc

@@ -3,20 +3,29 @@ BBC UK and OK! RSS News Feed Scraper.
 Fetches and parses articles from BBC News and OK! Magazine RSS feeds.
 """
 
+import logging
 from datetime import datetime
 
 import feedparser
 from pydantic import BaseModel, ValidationError, field_validator
 from pydantic.types import PastDatetime
 
-from logger import configure_logging, get_logger
-
 FEEDS = {
     "BBC News": "http://feeds.bbci.co.uk/news/uk/rss.xml",
     "OK! Magazine": "https://www.ok.co.uk/celebrity-news/?service=rss",
 }
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
+
+
+def configure_logging() -> None:
+    """Configure root logging. Call once from the entrypoint."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="{asctime} - {levelname} - {name} - {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M",
+    )
 
 
 class Article(BaseModel):
@@ -91,6 +100,14 @@ def convert_time_struct_to_datetime(time: tuple) -> datetime:
     return datetime(*time[:6])
 
 
-if __name__ == "__main__":
+def handler(event: dict, context: dict) -> list[dict]:
+    """Lambda handler that scrapes articles and returns them as JSON-serializable dicts."""
     configure_logging()
-    articles = scrape_articles()
+    logger.info("Extract handler invoked")
+    articles: list[Article] = scrape_articles()
+    logger.info("Returning %d articles", len(articles))
+    return [article.model_dump(mode="json") for article in articles]
+
+
+if __name__ == "__main__":
+    r = handler({}, {})

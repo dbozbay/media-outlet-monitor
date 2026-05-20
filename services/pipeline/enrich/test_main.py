@@ -1,13 +1,10 @@
-from datetime import datetime
-
 import pytest
 
-from extract import Article
-from transform import (
+from main import (
     clean_source,
     extract_source_article_id,
     generate_article_id,
-    transform_article_to_dict,
+    prepare_article_for_dynamodb,
 )
 
 
@@ -46,25 +43,27 @@ def test_generate_article_id_combines_source_and_article_id():
     assert result == "ok_magazine#37161008"
 
 
-def test_transform_article_to_dict_returns_expected_dictionary():
-    article = Article(
-        title="Vanessa Feltz ready for 'The One'",
-        source="OK! Magazine",
-        link="https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008",
-        summary="Vanessa Feltz has opened up about her love life.",
-        pub_date=datetime(2026, 5, 19, 13, 33, 23),
-    )
-    result = transform_article_to_dict(article)
-
-    assert result == {
-        "article_id": "ok_magazine#37161008",
-        "target_name": None,
-        "at": "2026-05-19T13:33:23",
+def test_prepare_article_for_dynamodb_returns_expected_dictionary():
+    article = {
         "title": "Vanessa Feltz ready for 'The One'",
         "source": "OK! Magazine",
-        "url": "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008",
-        "sentiment_score": None,
-        "sentiment_label": None,
-        "keywords": None,
-        "description": "Vanessa Feltz has opened up about her love life.",
+        "link": "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008",
+        "summary": "Vanessa Feltz has opened up about her love life.",
+        "pub_date": "2026-05-19T13:33:23",
+    }
+    result = prepare_article_for_dynamodb(article)
+
+    assert result == {
+        "article_id": {"S": "ok_magazine#37161008"},
+        "target_name": {"NULL": True},
+        "at": {"S": "2026-05-19T13:33:23"},
+        "title": {"S": "Vanessa Feltz ready for 'The One'"},
+        "source": {"S": "OK! Magazine"},
+        "url": {
+            "S": "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008"
+        },
+        "sentiment_score": {"NULL": True},
+        "sentiment_label": {"NULL": True},
+        "keywords": {"NULL": True},
+        "description": {"S": "Vanessa Feltz has opened up about her love life."},
     }

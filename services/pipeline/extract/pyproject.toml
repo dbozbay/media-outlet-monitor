@@ -1,16 +1,13 @@
 [project]
-name = "pipeline"
+name = "extract"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.13"
 dependencies = [
     "feedparser>=6.0.12",
     "pydantic>=2.13.4",
 ]
-
-[tool.pytest.ini_options]
-pythonpath = ["."]
 
 [tool.pyrefly]
 project-includes = [
@@ -22,6 +19,5 @@ project-includes = [
 dev = [
     "pyrefly>=1.0.0",
     "pytest>=9.0.3",
-    "pytest-cov>=7.1.0",
     "ruff>=0.15.13",
 ]
