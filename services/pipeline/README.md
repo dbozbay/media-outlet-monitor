@@ -12,6 +12,16 @@ uv sync
 uv run main.py
 ```
 
+## Scripts
+
+### `extract.py`
+
+Scrapes RSS feeds from BBC News UK and OK! Magazine, parses entries into validated `Article` models (via Pydantic), and logs progress.
+
+```sh
+uv run extract.py
+```
+
 ## Lint
 
 ```sh

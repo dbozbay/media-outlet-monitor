@@ -6,10 +6,17 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "feedparser>=6.0.12",
+    "pydantic>=2.13.4",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[tool.pyrefly]
+project-includes = [
+    "**/*.py*",
+    "**/*.ipynb",
+]
 
 [dependency-groups]
 dev = [
