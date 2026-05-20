@@ -30,18 +30,18 @@ def generate_article_id(source: str, url: str) -> str:
 
 
 def prepare_article_for_dynamodb(article: dict) -> dict:
-    """Transforms an article dict into a dictionary suitable for the DynamoDB."""
+    """Transforms an article dict into a dictionary suitable for DynamoDB."""
     return {
-        "article_id": {"S": generate_article_id(article["source"], article["link"])},
-        "target_name": {"NULL": True},
-        "at": {"S": article["pub_date"]},
-        "title": {"S": article["title"]},
-        "source": {"S": article["source"]},
-        "url": {"S": article["link"]},
-        "sentiment_score": {"NULL": True},
-        "sentiment_label": {"NULL": True},
-        "keywords": {"NULL": True},
-        "description": {"S": article["summary"]},
+        "article_id": generate_article_id(article["source"], article["link"]),
+        "target_name": "unknown",
+        "at": article["pub_date"],
+        "title": article["title"],
+        "source": article["source"],
+        "url": article["link"],
+        "sentiment_score": None,
+        "sentiment_label": None,
+        "keywords": None,
+        "description": article["summary"],
     }
 
 
