@@ -78,7 +78,9 @@ def parse_articles(entries: list[dict], source: str) -> list[Article]:
             articles.append(valid_article)
         except ValidationError as e:
             logger.warning(
-                "Skipping entry due to validation error: %s. Error: %s", entry, e
+                "Skipping entry due to validation error: '%s'. Error: %s",
+                entry.get("title", "N/A"),
+                e,
             )
     return articles
 
