@@ -51,6 +51,13 @@ resource "aws_lambda_function" "upload" {
     command = ["main.handler"]
   }
 
+  environment {
+    variables = {
+      DYNAMO_TABLE_NAME = var.dynamodb_table_name
+      AWS_REGION_NAME   = var.aws_region
+    }
+  }
+
   tags = {
     Environment = var.environment
     Service     = "media-outlet-monitor"
