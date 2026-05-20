@@ -1,17 +1,16 @@
 resource "aws_dynamodb_table" "articles" {
   name           = var.dynamodb_table_name
   billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "url"
-  range_key      = "at"
+  hash_key       = "target_name"
+  range_key      = "article_id"
 
   attribute {
-    name = "url"
+    name = "target_name"
     type = "S"
   }
-
   attribute {
-    name = "at"
-    type = "N"
+    name = "article_id"
+    type = "S"
   }
 
   tags = {
