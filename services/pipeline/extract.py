@@ -36,13 +36,12 @@ class Article(BaseModel):
 
 def scrape_articles() -> list[Article]:
     """Fetches and parses the RSS feed, returning a list of Article objects."""
-    urls = FEEDS.values()
     articles = []
-    for url in urls:
+    for source, url in FEEDS.items():
         logger.info("Fetching feed from %s", url)
         entries = fetch_feed(url)
         logger.info("Fetched %d entries from %s", len(entries), url)
-        articles.extend(parse_articles(entries))
+        articles.extend(parse_articles(entries, source))
     logger.info("Scraped %d articles total", len(articles))
     return articles
 
@@ -62,19 +61,17 @@ def fetch_feed(url: str) -> list[dict]:
     return list(feed.entries)
 
 
-def parse_articles(entries: list[dict]) -> list[Article]:
+def parse_articles(entries: list[dict], source: str) -> list[Article]:
     """Parses the list of feed entries into Article objects."""
     articles = []
     for entry in entries:
         try:
-            link = str(entry["link"])
-            source = get_source_from_url(link)
             pub_time = entry["published_parsed"]
 
             valid_article = Article(
                 title=str(entry["title"]).strip(),
-                source=source.strip(),
-                link=link.strip(),
+                source=source,
+                link=str(entry["link"]).strip(),
                 summary=str(entry["summary"]).strip(),
                 pub_date=convert_time_struct_to_datetime(pub_time),
             )
@@ -84,18 +81,6 @@ def parse_articles(entries: list[dict]) -> list[Article]:
                 "Skipping entry due to validation error: %s. Error: %s", entry, e
             )
     return articles
-
-
-def get_source_from_url(url: str) -> str:
-    """Determines the source of the feed based on the URL."""
-    url = url.lower()
-    return (
-        "BBC News"
-        if "bbc" in url
-        else "OK! Magazine"
-        if "ok.co.uk" in url
-        else "Unknown"
-    )
 
 
 def convert_time_struct_to_datetime(time_struct) -> datetime:
