@@ -21,13 +21,13 @@ It is **EXTREMELY important that you follow the instructions in the rule files v
 2. Follow TDD when it is possible. Always start new changes by writing new test cases (or changing existing tests).
    Remember to consult [Unit and Integration Tests](./instructions/testing.instructions.md) for details on how to write tests with pytest.
 
-3. Always run `uv run pytest` to verify that all tests pass before committing your changes.
+3. Always run tests from the correct service directory. For the pipeline service, run `cd services/pipeline && uv run pytest` to verify that all tests pass before committing your changes.
    Don't ask to run the tests, just do it. If you are not sure how to run the tests, ask for help.
-   You can also use `pytest-watch` to run the tests automatically when you change the code.
+   You can also use `cd services/pipeline && uv run pytest-watch` to run the tests automatically when you change the code.
 
 4. Fix any linting errors (with ruff, pyrefly etc.) and type checking warnings before going to the next step.
 
-5. Ensure code coverage is maintained or improved. Use `pytest --cov` to check coverage.
+5. Ensure code coverage is maintained or improved. For the pipeline service, run `cd services/pipeline && uv run pytest --cov` to check coverage.
 
 When you see paths like `/[project]/features/[feature]/` in rules, replace [project] with the name of the project you are working on (e.g. `ordering`), and `[feature]` with the name of the feature you are working on (e.g. `verify_or_add_payment`).
 
