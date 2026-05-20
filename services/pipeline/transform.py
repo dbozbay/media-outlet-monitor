@@ -1,5 +1,7 @@
 import re
 from urllib.parse import urlparse
+from extract import scrape_articles
+from logger import configure_logging
 
 
 def extract_source_article_id(url: str) -> str:
@@ -33,13 +35,32 @@ def transform_article_to_dict(article) -> dict:
     """Transforms an article object into a dictionary suitable for the DynamoDB."""
     return {
         "article_id": generate_article_id(article.source, article.link),
-        "target_name": "",
+        "target_name": None,
         "at": article.pub_date.isoformat(),
         "title": article.title,
         "source": article.source,
         "url": article.link,
         "sentiment_score": None,
-        "sentiment_label": "",
-        "keywords": [],
+        "sentiment_label": None,
+        "keywords": None,
         "description": article.summary,
     }
+
+
+def transform_articles(articles: list) -> list[dict]:
+    """Transforms a list of Article objects into dictionaries."""
+    return [transform_article_to_dict(article) for article in articles]
+
+
+if __name__ == "__main__":
+    configure_logging()
+
+    extracted_articles = scrape_articles()
+
+    transformed_articles = transform_articles(extracted_articles)
+
+    print(f"Extracted articles: {len(extracted_articles)}")
+    print(f"Transformed articles: {len(transformed_articles)}")
+
+    for article in transformed_articles[:5]:
+        print(article)
