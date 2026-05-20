@@ -16,7 +16,7 @@ resource "aws_iam_role" "loader_lambda_role" {
 
   tags = {
     Environment = var.environment
-    Service     = "media-outlet-monitor"
+    Service     = var.service_name
   }
 }
 
@@ -52,7 +52,7 @@ resource "aws_iam_role" "reader_lambda_role" {
 
   tags = {
     Environment = var.environment
-    Service     = "media-outlet-monitor"
+    Service     = var.service_name
   }
 }
 

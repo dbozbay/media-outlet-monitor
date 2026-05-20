@@ -16,6 +16,6 @@ resource "aws_dynamodb_table" "articles" {
 
   tags = {
     Environment = var.environment
-    Service     = "media-outlet-monitor"
+    Service     = var.service_name
   }
 }
