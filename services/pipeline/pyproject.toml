@@ -7,7 +7,6 @@ requires-python = ">=3.14"
 dependencies = [
     "feedparser>=6.0.12",
     "pydantic>=2.13.4",
-    "pytest-cov>=7.1.0",
 ]
 
 [tool.pytest.ini_options]
@@ -23,5 +22,6 @@ project-includes = [
 dev = [
     "pyrefly>=1.0.0",
     "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
     "ruff>=0.15.13",
 ]
