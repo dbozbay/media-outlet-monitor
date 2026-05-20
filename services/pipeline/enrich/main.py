@@ -1,5 +1,18 @@
+import logging
 import re
 from urllib.parse import urlparse
+
+logger = logging.getLogger(__name__)
+
+
+def configure_logging() -> None:
+    """Configure root logging. Call once from the entrypoint."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="{asctime} - {levelname} - {name} - {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M",
+    )
 
 
 def extract_source_article_id(url: str) -> str:
@@ -48,3 +61,12 @@ def prepare_article_for_dynamodb(article: dict) -> dict:
 def prepare_articles_for_dynamodb(articles: list[dict]) -> list[dict]:
     """Transforms a list of article dicts into DynamoDB-ready dictionaries."""
     return [prepare_article_for_dynamodb(article) for article in articles]
+
+
+def handler(event: list[dict], context: dict) -> list[dict]:
+    """Lambda handler that enriches articles and returns DynamoDB-ready items."""
+    configure_logging()
+    logger.info("Enrich handler invoked with %d articles", len(event))
+    items = prepare_articles_for_dynamodb(event)
+    logger.info("Prepared %d items for DynamoDB", len(items))
+    return items
