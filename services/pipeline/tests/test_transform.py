@@ -58,13 +58,13 @@ def test_transform_article_to_dict_returns_expected_dictionary():
 
     assert result == {
         "article_id": "ok_magazine#37161008",
-        "target_name": "",
+        "target_name": None,
         "at": "2026-05-19T13:33:23",
         "title": "Vanessa Feltz ready for 'The One'",
         "source": "OK! Magazine",
         "url": "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008",
         "sentiment_score": None,
-        "sentiment_label": "",
-        "keywords": [],
+        "sentiment_label": None,
+        "keywords": None,
         "description": "Vanessa Feltz has opened up about her love life.",
     }
