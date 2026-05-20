@@ -63,3 +63,75 @@ variable "ecr_untagged_image_retention_days" {
   default     = 7
   type        = number
 }
+
+variable "ecr_scan_on_push" {
+  description = "Enable vulnerability scanning on push for ECR repositories"
+  default     = true
+  type        = bool
+}
+
+variable "service_name" {
+  description = "Service name for resource tags"
+  default     = "media-outlet-monitor"
+  type        = string
+}
+
+variable "ecs_cluster_name" {
+  description = "Name of the existing ECS cluster"
+  default     = "c23-ecs-cluster"
+  type        = string
+}
+
+variable "vpc_name" {
+  description = "Name of the VPC to deploy dashboard into"
+  default     = "c23-VPC"
+  type        = string
+}
+
+variable "public_subnet_pattern" {
+  description = "Name pattern for public subnets"
+  default     = "c23-public-subnet-*"
+  type        = string
+}
+
+variable "dashboard_log_group_path" {
+  description = "CloudWatch log group path for dashboard"
+  default     = "/ecs/c23-mesopelagic-dashboard"
+  type        = string
+}
+
+variable "dashboard_log_retention_days" {
+  description = "CloudWatch log retention in days for dashboard"
+  default     = 7
+  type        = number
+}
+
+variable "dashboard_container_port" {
+  description = "Port exposed by Streamlit dashboard container"
+  default     = 8501
+  type        = number
+}
+
+variable "dashboard_cpu" {
+  description = "CPU units for dashboard ECS task (256 = 0.25 vCPU)"
+  default     = "256"
+  type        = string
+}
+
+variable "dashboard_memory" {
+  description = "Memory in MB for dashboard ECS task"
+  default     = "512"
+  type        = string
+}
+
+variable "dashboard_desired_count" {
+  description = "Desired number of dashboard tasks"
+  default     = 1
+  type        = number
+}
+
+variable "ecs_task_execution_role_name" {
+  description = "Name of the ECS task execution role"
+  default     = "ecsTaskExecutionRole"
+  type        = string
+}
