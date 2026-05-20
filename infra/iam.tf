@@ -1,3 +1,37 @@
+# Lambda Execution Role (shared by all three Lambda functions)
+resource "aws_iam_role" "lambda_exec_role" {
+  name               = "c23-mesopelagic-lambda-exec-role"
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+
+  tags = {
+    Environment = var.environment
+    Service     = "media-outlet-monitor"
+  }
+}
+
+# Attach AWS-managed policy for CloudWatch Logs
+resource "aws_iam_role_policy_attachment" "lambda_logs" {
+  role       = aws_iam_role.lambda_exec_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# Inline policy for DynamoDB access
+data "aws_iam_policy_document" "lambda_dynamodb_policy" {
+  statement {
+    actions = [
+      "dynamodb:PutItem",
+      "dynamodb:GetItem",
+      "dynamodb:UpdateItem"
+    ]
+    resources = [aws_dynamodb_table.articles.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "lambda_dynamodb" {
+  name   = "c23-mesopelagic-lambda-dynamodb-policy"
+  role   = aws_iam_role.lambda_exec_role.id
+  policy = data.aws_iam_policy_document.lambda_dynamodb_policy.json
+}
 # Assume Role Policy for Lambdas
 data "aws_iam_policy_document" "lambda_assume_role" {
   statement {
