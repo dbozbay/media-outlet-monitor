@@ -85,9 +85,9 @@ def parse_articles(entries: list[dict], source: str) -> list[Article]:
     return articles
 
 
-def convert_time_struct_to_datetime(time_struct) -> datetime:
+def convert_time_struct_to_datetime(time: tuple) -> datetime:
     """Converts a time.struct_time to a datetime object."""
-    return datetime(*time_struct[:6])
+    return datetime(*time[:6])
 
 
 if __name__ == "__main__":
