@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE_TAG="extract"
+IMAGE_TAG="enrich"
 
 REPO_NAME="c23-mesopelagic-pipeline"
 REGION="eu-west-2"
