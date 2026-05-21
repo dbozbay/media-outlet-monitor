@@ -134,11 +134,8 @@ resource "aws_iam_role_policy" "reader_policy" {
   policy = data.aws_iam_policy_document.reader_policy.json
 }
 
-<<<<<<< HEAD
-=======
 # EventBridge Scheduler Execution Role and Policies
 
->>>>>>> df480ab (fix: Implementing changes from Copilot review.)
 # Assume Role Policy for EventBridge Scheduler Service
 data "aws_iam_policy_document" "eventbridge_assume_role" {
   statement {
