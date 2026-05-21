@@ -11,6 +11,8 @@ from main import (
     fetch_feed,
     parse_articles,
     scrape_articles,
+    fetch_article_body,
+    extract_body_text,
 )
 
 
@@ -55,6 +57,7 @@ def test_article_valid():
         link="https://example.com/article",
         summary="A brief summary.",
         pub_date=datetime(2024, 1, 1, 12, 0, 0),
+        body="This is the body of the article.",
     )
     assert article.title == "Hello World"
     assert article.source == "BBC News"
@@ -68,6 +71,7 @@ def test_article_rejects_invalid_source():
             link="https://example.com",
             summary="Summary",
             pub_date=datetime(2024, 1, 1),
+            body="This is the body of the article.",
         )
 
 
@@ -79,6 +83,7 @@ def test_article_rejects_future_pub_date():
             link="https://example.com",
             summary="Summary",
             pub_date=datetime(2099, 1, 1),
+            body="This is the body of the article.",
         )
 
 
@@ -136,3 +141,50 @@ def test_scrape_articles_aggregates_all_feeds(sample_feed_result):
     sources = {a.source for a in articles}
     assert "BBC News" in sources
     assert "OK! Magazine" in sources
+
+
+def test_extract_body_text_returns_string():
+    html = """
+    <html>
+        <body>
+            <p>This is the first paragraph.</p>
+            <p>This is the second paragraph.</p>
+        </body>
+    </html>
+    """
+
+    result = extract_body_text(html)
+
+    assert isinstance(result, str)
+
+
+def test_extract_body_text_extracts_paragraph_text():
+    html = """
+    <html>
+        <body>
+            <p>This is the first paragraph.</p>
+            <p>This is the second paragraph.</p>
+        </body>
+    </html>
+    """
+
+    result = extract_body_text(html)
+
+    assert "This is the first paragraph." in result
+    assert "This is the second paragraph." in result
+
+
+def test_fetch_article_body_returns_string_on_success():
+    mock_response = type(
+        "MockResponse",
+        (),
+        {
+            "text": "<html><body><p>Article body text.</p></body></html>",
+            "raise_for_status": lambda self: None,
+        },
+    )()
+
+    with patch("main.requests.get", return_value=mock_response):
+        result = fetch_article_body("https://example.com/article")
+
+    assert isinstance(result, str)

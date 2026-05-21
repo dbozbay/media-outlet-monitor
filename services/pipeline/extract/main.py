@@ -5,6 +5,8 @@ Fetches and parses articles from BBC News and OK! Magazine RSS feeds.
 
 import logging
 from datetime import datetime
+import requests
+from bs4 import BeautifulSoup
 
 import feedparser
 from pydantic import BaseModel, ValidationError, field_validator
@@ -36,6 +38,7 @@ class Article(BaseModel):
     link: str
     summary: str
     pub_date: PastDatetime
+    body: str
 
     @field_validator("source", mode="before")
     def validate_source(cls, value: str) -> str:
@@ -84,6 +87,7 @@ def parse_articles(entries: list[dict], source: str) -> list[Article]:
                 link=str(entry["link"]).strip(),
                 summary=str(entry["summary"]).strip(),
                 pub_date=convert_time_struct_to_datetime(pub_time),
+                body=fetch_article_body(str(entry["link"]).strip()),
             )
             articles.append(valid_article)
         except ValidationError as e:
@@ -98,6 +102,37 @@ def parse_articles(entries: list[dict], source: str) -> list[Article]:
 def convert_time_struct_to_datetime(time: tuple) -> datetime:
     """Converts a time.struct_time to a datetime object."""
     return datetime(*time[:6])
+
+
+def fetch_article_body(url: str) -> str:
+    """Fetches article page HTML and extracts readable article body text."""
+    try:
+        response = requests.get(
+            url,
+            timeout=10,
+            headers={"User-Agent": "Mozilla/5.0"},
+        )
+        response.raise_for_status()
+        return extract_body_text(response.text)
+
+    except requests.RequestException as e:
+        logger.warning("Failed to fetch article body from %s: %s", url, e)
+        return ""
+
+
+def extract_body_text(html: str) -> str:
+    """Extracts readable paragraph text from article HTML."""
+    soup = BeautifulSoup(html, "html.parser")
+
+    paragraphs = soup.find_all("p")
+
+    paragraph_text = [
+        paragraph.get_text(strip=True)
+        for paragraph in paragraphs
+        if paragraph.get_text(strip=True)
+    ]
+
+    return " ".join(paragraph_text)
 
 
 def handler(event: dict, context: dict) -> list[dict]:
