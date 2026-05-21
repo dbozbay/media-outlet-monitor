@@ -125,3 +125,44 @@ resource "aws_iam_role_policy" "reader_policy" {
   role   = aws_iam_role.reader_lambda_role.id
   policy = data.aws_iam_policy_document.reader_policy.json
 }
+
+# Assume Role Policy for EventBridge Scheduler Service
+data "aws_iam_policy_document" "eventbridge_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["scheduler.amazonaws.com"]
+    }
+  }
+}
+
+# IAM Role for EventBridge to invoke Step Functions
+resource "aws_iam_role" "c23_mesopelagic_eventbridge_sfn_role" {
+  name               = "c23-mesopelagic-eventbridge-sfn-role"
+  assume_role_policy = data.aws_iam_policy_document.eventbridge_assume_role.json
+
+  tags = {
+    Environment = var.environment
+    Service     = "media-outlet-monitor"
+  }
+}
+
+# Inline policy granting EventBridge permission to invoke Step Functions
+resource "aws_iam_role_policy" "c23_mesopelagic_eventbridge_sfn_policy" {
+  name   = "c23-mesopelagic-eventbridge-sfn-policy"
+  role   = aws_iam_role.c23_mesopelagic_eventbridge_sfn_role.id
+  policy = data.aws_iam_policy_document.eventbridge_sfn_policy.json
+}
+
+# Policy document for Step Functions execution
+data "aws_iam_policy_document" "eventbridge_sfn_policy" {
+  statement {
+    actions = [
+      "states:StartExecution"
+    ]
+    resources = [
+      data.aws_sfn_state_machine.pipeline_orchestrator.arn
+    ]
+  }
+}
