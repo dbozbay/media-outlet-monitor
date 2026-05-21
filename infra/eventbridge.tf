@@ -7,7 +7,7 @@ data "aws_sfn_state_machine" "pipeline_orchestrator" {
 resource "aws_scheduler_schedule" "c23_mesopelagic_pipeline_scheduler" {
   name                = "c23-mesopelagic-pipeline-scheduler"
   description         = "Triggers Step Functions ingestion pipeline every hour"
-  schedule_expression = "rate(1 hour)"
+  schedule_expression = "rate(5 minutes)"
   flexible_time_window {
     mode = "OFF"
   }
