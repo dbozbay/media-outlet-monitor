@@ -1,24 +1,33 @@
-import json
 import logging
 from os import getenv
 
 import boto3
-from boto3.dynamodb.conditions import Key
 from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
+from mangum import Mangum
+from pydantic import BaseModel, Field
+from pydantic.types import PastDatetime
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+app = FastAPI(title="Articles API")
 
-def configure_logging() -> None:
-    """Configure root logging. Call once from the entrypoint."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format="{asctime} - {levelname} - {name} - {message}",
-        style="{",
-        datefmt="%Y-%m-%d %H:%M",
-    )
+
+class Article(BaseModel):
+    """Pydantic model representing an article stored in DynamoDB."""
+
+    article_id: str
+    title: str
+    url: str
+    source: str
+    description: str
+    at: PastDatetime
+    target_name: str
+    keywords: list[str]
+    sentiment_label: str
+    sentiment_score: float = Field(..., ge=-1.0, le=1.0)
 
 
 def get_articles() -> list[dict]:
@@ -29,35 +38,48 @@ def get_articles() -> list[dict]:
     return response.get("Items", [])
 
 
-def get_articles_by_target(target_name: str) -> list[dict]:
-    """Query the DynamoDB table for articles matching a target name."""
+def get_articles_by_target(target_name: str, sentiment: str | None = None) -> list[dict]:
+    """Scan the DynamoDB table and filter articles by target name (case-insensitive)."""
     dynamodb = boto3.resource("dynamodb", region_name=getenv("AWS_REGION_NAME"))
     table = dynamodb.Table(getenv("DYNAMO_TABLE_NAME"))
-    response = table.query(KeyConditionExpression=Key("target_name").eq(target_name))
-    return response.get("Items", [])
+    response = table.scan()
+    items = [
+        item
+        for item in response.get("Items", [])
+        if item.get("target_name", "").lower() == target_name.lower()
+    ]
+    if sentiment:
+        items = [
+            item for item in items
+            if item.get("sentiment_label", "").lower() == sentiment.lower()
+        ]
+    return items
 
 
-def handler(event: dict, context: object) -> dict:
-    """AWS Lambda handler for API Gateway routes."""
-    configure_logging()
-    try:
-        route = event.get("routeKey")
-        if route == "GET /articles/{target_name}":
-            target_name = event["pathParameters"]["target_name"]
-            logger.info("Fetching articles for target: %s", target_name)
-            articles = get_articles_by_target(target_name)
-        else:
-            articles = get_articles()
-        logger.info("Returning %d articles", len(articles))
-        return {
-            "statusCode": 200,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps(articles, default=str),
-        }
-    except Exception as e:
-        logger.exception("Failed to fetch articles")
-        return {
-            "statusCode": 500,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"error": str(e)}),
-        }
+@app.get("/")
+async def root():
+    return {"message": "🚀 API is running!", "docs": "/docs"}
+
+
+@app.get("/articles", response_model=list[Article])
+async def list_articles():
+    """Return all articles."""
+    articles = get_articles()
+    if not articles:
+        raise HTTPException(status_code=404, detail="No articles found")
+    return articles
+
+
+@app.get("/articles/{target_name}", response_model=list[Article])
+async def list_articles_by_target(target_name: str, sentiment: str | None = None):
+    """Return articles filtered by target name, optionally filtered by sentiment label."""
+    articles = get_articles_by_target(target_name, sentiment)
+    if not articles:
+        detail = f"No articles found for target: {target_name}"
+        if sentiment:
+            detail += f" with sentiment: {sentiment}"
+        raise HTTPException(status_code=404, detail=detail)
+    return articles
+
+
+handler = Mangum(app)
