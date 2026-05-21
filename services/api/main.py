@@ -3,6 +3,7 @@ import logging
 from os import getenv
 
 import boto3
+from boto3.dynamodb.conditions import Key
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,11 +29,25 @@ def get_articles() -> list[dict]:
     return response.get("Items", [])
 
 
+def get_articles_by_target(target_name: str) -> list[dict]:
+    """Query the DynamoDB table for articles matching a target name."""
+    dynamodb = boto3.resource("dynamodb", region_name=getenv("AWS_REGION_NAME"))
+    table = dynamodb.Table(getenv("DYNAMO_TABLE_NAME"))
+    response = table.query(KeyConditionExpression=Key("target_name").eq(target_name))
+    return response.get("Items", [])
+
+
 def handler(event: dict, context: object) -> dict:
-    """AWS Lambda handler for the API Gateway GET /articles route."""
+    """AWS Lambda handler for API Gateway routes."""
     configure_logging()
     try:
-        articles = get_articles()
+        route = event.get("routeKey")
+        if route == "GET /articles/{target_name}":
+            target_name = event["pathParameters"]["target_name"]
+            logger.info("Fetching articles for target: %s", target_name)
+            articles = get_articles_by_target(target_name)
+        else:
+            articles = get_articles()
         logger.info("Returning %d articles", len(articles))
         return {
             "statusCode": 200,
