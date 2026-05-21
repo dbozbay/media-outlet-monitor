@@ -64,3 +64,30 @@ resource "aws_lambda_function" "upload" {
     Stage       = "load"
   }
 }
+
+# API Lambda Function
+resource "aws_lambda_function" "api" {
+  function_name = "c23-mesopelagic-api"
+  role          = aws_iam_role.reader_lambda_role.arn
+  package_type  = "Image"
+  image_uri     = format("%s:latest", aws_ecr_repository.repositories["api_collection"].repository_url)
+  timeout       = 30
+  memory_size   = 128
+
+  image_config {
+    command = ["main.handler"]
+  }
+
+  environment {
+    variables = {
+      DYNAMO_TABLE_NAME = var.dynamodb_table_name
+      AWS_REGION_NAME   = var.aws_region
+    }
+  }
+
+  tags = {
+    Environment = var.environment
+    Service     = "media-outlet-monitor"
+    Stage       = "api"
+  }
+}

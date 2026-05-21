@@ -43,3 +43,8 @@ output "api_collection_repository_url" {
   value       = aws_ecr_repository.repositories["api_collection"].repository_url
   description = "URL of the c23-mesopelagic-api-collection ECR repository for push/pull operations"
 }
+
+output "api_gateway_url" {
+  value       = aws_apigatewayv2_api.articles_api.api_endpoint
+  description = "Base URL of the Articles HTTP API Gateway"
+}
