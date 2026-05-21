@@ -3,7 +3,6 @@ from main import (
     clean_source,
     extract_source_article_id,
     generate_article_id,
-    prepare_article_for_dynamodb,
 )
 
 
