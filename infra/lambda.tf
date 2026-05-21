@@ -5,7 +5,7 @@ resource "aws_lambda_function" "extract" {
   package_type  = "Image"
   image_uri     = format("%s:latest", aws_ecr_repository.repositories["extract"].repository_url)
   timeout       = 60
-  memory_size   = 128
+  memory_size   = 1024
 
   image_config {
     command = ["main.handler"]
@@ -45,7 +45,7 @@ resource "aws_lambda_function" "upload" {
   package_type  = "Image"
   image_uri     = format("%s:latest", aws_ecr_repository.repositories["load"].repository_url)
   timeout       = 60
-  memory_size   = 128
+  memory_size   = 1024
 
   image_config {
     command = ["main.handler"]
@@ -71,8 +71,8 @@ resource "aws_lambda_function" "api" {
   role          = aws_iam_role.reader_lambda_role.arn
   package_type  = "Image"
   image_uri     = format("%s:latest", aws_ecr_repository.repositories["api_collection"].repository_url)
-  timeout       = 30
-  memory_size   = 128
+  timeout       = 60
+  memory_size   = 1024
 
   image_config {
     command = ["main.handler"]
