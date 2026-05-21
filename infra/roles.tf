@@ -1,3 +1,14 @@
+# Assume Role Policy for Lambda Services
+data "aws_iam_policy_document" "lambda_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+  }
+}
+
 # Lambda Execution Role (shared by all three Lambda functions)
 resource "aws_iam_role" "lambda_exec_role" {
   name               = "c23-mesopelagic-lambda-exec-role"
@@ -15,7 +26,7 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# Inline policy for DynamoDB access
+# Inline policy for DynamoDB and ECR access
 data "aws_iam_policy_document" "lambda_dynamodb_policy" {
   statement {
     actions = [
@@ -25,22 +36,21 @@ data "aws_iam_policy_document" "lambda_dynamodb_policy" {
     ]
     resources = [aws_dynamodb_table.articles.arn]
   }
+
+  statement {
+    actions = [
+      "ecr:GetAuthorizationToken",
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer"
+    ]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role_policy" "lambda_dynamodb" {
   name   = "c23-mesopelagic-lambda-dynamodb-policy"
   role   = aws_iam_role.lambda_exec_role.id
   policy = data.aws_iam_policy_document.lambda_dynamodb_policy.json
-}
-# Assume Role Policy for Lambdas
-data "aws_iam_policy_document" "lambda_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
-    }
-  }
 }
 
 # Loader Lambda Role (Write Access)
@@ -79,7 +89,7 @@ resource "aws_iam_role_policy" "loader_policy" {
   policy = data.aws_iam_policy_document.loader_policy.json
 }
 
-# Reader Lambda Role (Read Access) - Shared by Dashboard and Social Media Integration
+# Reader Lambda Role (Read Access)
 resource "aws_iam_role" "reader_lambda_role" {
   name               = var.reader_role_name
   assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
