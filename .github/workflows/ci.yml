@@ -17,6 +17,7 @@ jobs:
           - services/pipeline/extract
           - services/pipeline/enrich
           - services/pipeline/load
+          - services/api
 
     defaults:
       run:
