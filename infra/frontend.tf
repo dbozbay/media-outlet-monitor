@@ -61,6 +61,17 @@ resource "aws_ecs_task_definition" "dashboard" {
         }
       ]
 
+      environment = [
+        {
+          name  = "DYNAMO_TABLE_NAME"
+          value = var.dynamodb_table_name
+        },
+        {
+          name  = "AWS_REGION_NAME"
+          value = var.aws_region
+        }
+      ]
+
       logConfiguration = {
         logDriver = "awslogs"
         options = {
