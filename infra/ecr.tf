@@ -3,6 +3,7 @@ resource "aws_ecr_repository" "repositories" {
   for_each             = var.ecr_repositories
   name                 = each.value.name
   image_tag_mutability = var.ecr_image_tag_mutability
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = var.ecr_scan_on_push
