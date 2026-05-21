@@ -3,7 +3,7 @@ resource "aws_lambda_function" "extract" {
   function_name = "c23-mesopelagic-extract"
   role          = aws_iam_role.lambda_exec_role.arn
   package_type  = "Image"
-  image_uri     = format("%s:extract", aws_ecr_repository.repositories["pipeline"].repository_url)
+  image_uri     = format("%s:latest", aws_ecr_repository.repositories["extract"].repository_url)
   timeout       = 60
   memory_size   = 128
 
@@ -23,7 +23,7 @@ resource "aws_lambda_function" "enrich" {
   function_name = "c23-mesopelagic-enrich"
   role          = aws_iam_role.lambda_exec_role.arn
   package_type  = "Image"
-  image_uri     = format("%s:enrich", aws_ecr_repository.repositories["pipeline"].repository_url)
+  image_uri     = format("%s:latest", aws_ecr_repository.repositories["enrich"].repository_url)
   timeout       = 60
   memory_size   = 1024
 
@@ -43,7 +43,7 @@ resource "aws_lambda_function" "upload" {
   function_name = "c23-mesopelagic-upload"
   role          = aws_iam_role.lambda_exec_role.arn
   package_type  = "Image"
-  image_uri     = format("%s:load", aws_ecr_repository.repositories["pipeline"].repository_url)
+  image_uri     = format("%s:latest", aws_ecr_repository.repositories["load"].repository_url)
   timeout       = 60
   memory_size   = 128
 

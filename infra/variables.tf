@@ -34,8 +34,14 @@ variable "ecr_repositories" {
     name = string
   }))
   default = {
-    pipeline = {
-      name = "c23-mesopelagic-pipeline"
+    extract = {
+      name = "c23-mesopelagic-extract"
+    }
+    enrich = {
+      name = "c23-mesopelagic-enrich"
+    }
+    load = {
+      name = "c23-mesopelagic-load"
     }
     streamlit_dashboard = {
       name = "c23-mesopelagic-streamlit-dashboard"
