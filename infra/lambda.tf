@@ -43,7 +43,7 @@ resource "aws_lambda_function" "upload" {
   function_name = "c23-mesopelagic-upload"
   role          = aws_iam_role.lambda_exec_role.arn
   package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.repositories["pipeline"].repository_url}:load"
+  image_uri     = format("%s:load", aws_ecr_repository.repositories["pipeline"].repository_url)
   timeout       = 60
   memory_size   = 128
 
