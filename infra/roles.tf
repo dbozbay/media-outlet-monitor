@@ -27,7 +27,7 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
 }
 
 # Inline policy for DynamoDB and ECR access
-data "aws_iam_policy_document" "lambda_dynamodb_policy" {
+data "aws_iam_policy_document" "lambda_exec_policy" {
   statement {
     actions = [
       "dynamodb:PutItem",
@@ -39,18 +39,26 @@ data "aws_iam_policy_document" "lambda_dynamodb_policy" {
 
   statement {
     actions = [
-      "ecr:GetAuthorizationToken",
-      "ecr:BatchGetImage",
-      "ecr:GetDownloadUrlForLayer"
+      "ecr:GetAuthorizationToken"
     ]
     resources = ["*"]
   }
+
+  statement {
+    actions = [
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer"
+    ]
+    resources = [
+      aws_ecr_repository.repositories["pipeline"].arn
+    ]
+  }
 }
 
-resource "aws_iam_role_policy" "lambda_dynamodb" {
-  name   = "c23-mesopelagic-lambda-dynamodb-policy"
+resource "aws_iam_role_policy" "lambda_exec" {
+  name   = "c23-mesopelagic-lambda-exec-policy"
   role   = aws_iam_role.lambda_exec_role.id
-  policy = data.aws_iam_policy_document.lambda_dynamodb_policy.json
+  policy = data.aws_iam_policy_document.lambda_exec_policy.json
 }
 
 # Loader Lambda Role (Write Access)
@@ -126,6 +134,11 @@ resource "aws_iam_role_policy" "reader_policy" {
   policy = data.aws_iam_policy_document.reader_policy.json
 }
 
+<<<<<<< HEAD
+=======
+# EventBridge Scheduler Execution Role and Policies
+
+>>>>>>> df480ab (fix: Implementing changes from Copilot review.)
 # Assume Role Policy for EventBridge Scheduler Service
 data "aws_iam_policy_document" "eventbridge_assume_role" {
   statement {

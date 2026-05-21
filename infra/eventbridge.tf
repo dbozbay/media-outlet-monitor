@@ -5,8 +5,8 @@ data "aws_sfn_state_machine" "pipeline_orchestrator" {
 
 # EventBridge Scheduler for Step Functions pipeline
 resource "aws_scheduler_schedule" "c23_mesopelagic_pipeline_scheduler" {
-  name               = "c23-mesopelagic-pipeline-scheduler"
-  description        = "Triggers Step Functions ingestion pipeline every hour"
+  name                = "c23-mesopelagic-pipeline-scheduler"
+  description         = "Triggers Step Functions ingestion pipeline every hour"
   schedule_expression = "rate(1 hour)"
   flexible_time_window {
     mode = "OFF"
@@ -16,5 +16,4 @@ resource "aws_scheduler_schedule" "c23_mesopelagic_pipeline_scheduler" {
     arn      = data.aws_sfn_state_machine.pipeline_orchestrator.arn
     role_arn = aws_iam_role.c23_mesopelagic_eventbridge_sfn_role.arn
   }
-
 }
