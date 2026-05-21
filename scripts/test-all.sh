@@ -8,6 +8,6 @@ while IFS= read -r pyproject; do
   dir="$(dirname "$pyproject")"
   echo "Testing ${dir#"$ROOT"/}..."
   (cd "$dir" && uv run pytest)
-done < <(find "$ROOT/services" -name "pyproject.toml" -type f)
+done < <(find "$ROOT/services" -name "pyproject.toml" -type f -not -path "*/.venv/*")
 
 echo "All tests passed."
