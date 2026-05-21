@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE_TAG="extract"
-
-REPO_NAME="c23-mesopelagic-pipeline"
+REPO_NAME="c23-mesopelagic-extract"
 REGION="eu-west-2"
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-IMAGE_URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${REPO_NAME}:${IMAGE_TAG}"
+IMAGE_URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${REPO_NAME}:latest"
 
 echo "Logging in to ECR..."
 aws ecr get-login-password --region "$REGION" | \
