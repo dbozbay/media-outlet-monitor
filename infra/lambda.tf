@@ -3,7 +3,7 @@ resource "aws_lambda_function" "extract" {
   function_name = "c23-mesopelagic-extract"
   role          = aws_iam_role.lambda_exec_role.arn
   package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.repositories["pipeline"].repository_url}:extract"
+  image_uri     = format("%s:extract", aws_ecr_repository.repositories["pipeline"].repository_url)
   timeout       = 60
   memory_size   = 128
 
