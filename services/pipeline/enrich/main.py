@@ -1,19 +1,12 @@
 import logging
 import re
 from urllib.parse import urlparse
-import nltk
+
 import spacy
-from spacy.cli import download
 from nltk.corpus import stopwords
 from nltk.sentiment import SentimentIntensityAnalyzer
 from nltk.tokenize import word_tokenize
 
-nltk.download("punkt", quiet=True)
-nltk.download("punkt_tab", quiet=True)
-nltk.download("stopwords", quiet=True)
-nltk.download("vader_lexicon", quiet=True)
-
-download("en_core_web_sm")
 nlp = spacy.load("en_core_web_sm")
 sia = SentimentIntensityAnalyzer()
 logger = logging.getLogger(__name__)

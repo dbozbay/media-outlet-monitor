@@ -1,22 +1,11 @@
 FROM ghcr.io/astral-sh/uv:0.11.15 AS uv
 
-# First, bundle the dependencies into the task root.
 FROM public.ecr.aws/lambda/python:3.13 AS builder
 
-# Enable bytecode compilation, to improve cold-start performance.
 ENV UV_COMPILE_BYTECODE=1
-
-# Disable installer metadata, to create a deterministic layer.
 ENV UV_NO_INSTALLER_METADATA=1
-
-# Enable copy mode to support bind mount caching.
 ENV UV_LINK_MODE=copy
 
-# Bundle the dependencies into the Lambda task root via `uv pip install --target`.
-#
-# Omit any local packages (`--no-emit-workspace`) and development dependencies (`--no-dev`).
-# This ensures that the Docker layer cache is only invalidated when the `pyproject.toml` or `uv.lock`
-# files change, but remains robust to changes in the application code.
 RUN --mount=from=uv,source=/uv,target=/bin/uv \
     --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
@@ -26,11 +15,15 @@ RUN --mount=from=uv,source=/uv,target=/bin/uv \
 
 FROM public.ecr.aws/lambda/python:3.13
 
-# Copy the runtime dependencies from the builder stage.
+ENV NLTK_DATA=/opt/nltk_data
+
 COPY --from=builder ${LAMBDA_TASK_ROOT} ${LAMBDA_TASK_ROOT}
 
-# Copy the application code.
+RUN mkdir -p /opt/nltk_data && \
+    python -c "import nltk; nltk.download('punkt', download_dir='/opt/nltk_data'); nltk.download('punkt_tab', download_dir='/opt/nltk_data'); nltk.download('stopwords', download_dir='/opt/nltk_data'); nltk.download('vader_lexicon', download_dir='/opt/nltk_data')"
+
+RUN python -m spacy download en_core_web_sm
+
 COPY main.py ${LAMBDA_TASK_ROOT}
 
-# Set the AWS Lambda handler.
 CMD ["main.handler"]
