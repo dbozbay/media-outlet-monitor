@@ -3,9 +3,10 @@ set -euo pipefail
 
 IMAGE_NAME="enrich:test"
 CONTAINER_NAME="enrich-local-test"
+SERVICE_DIR="$(dirname "$0")/../services/pipeline/enrich"
 
 echo "Building image..."
-docker buildx build --platform linux/amd64 --provenance=false -t "$IMAGE_NAME" .
+docker buildx build --platform linux/amd64 --provenance=false -t "$IMAGE_NAME" "$SERVICE_DIR"
 
 echo "Starting container..."
 docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
