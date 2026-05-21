@@ -38,6 +38,44 @@ resource "aws_cloudwatch_log_group" "dashboard" {
   }
 }
 
+# IAM Role for ECS Task (runtime permissions)
+data "aws_iam_policy_document" "ecs_task_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "dashboard_task_role" {
+  name               = "c23-mesopelagic-dashboard-task-role"
+  assume_role_policy = data.aws_iam_policy_document.ecs_task_assume_role.json
+
+  tags = {
+    Environment = var.environment
+    Service     = var.service_name
+  }
+}
+
+data "aws_iam_policy_document" "dashboard_task_policy" {
+  statement {
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:Query",
+      "dynamodb:Scan"
+    ]
+    resources = [aws_dynamodb_table.articles.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "dashboard_task_policy" {
+  name   = "c23-mesopelagic-dashboard-dynamodb-read"
+  role   = aws_iam_role.dashboard_task_role.id
+  policy = data.aws_iam_policy_document.dashboard_task_policy.json
+}
+
 # ECS Task Definition
 resource "aws_ecs_task_definition" "dashboard" {
   family                   = "c23-mesopelagic-dashboard-task"
@@ -46,6 +84,7 @@ resource "aws_ecs_task_definition" "dashboard" {
   cpu                      = var.dashboard_cpu
   memory                   = var.dashboard_memory
   execution_role_arn       = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.ecs_task_execution_role_name}"
+  task_role_arn            = aws_iam_role.dashboard_task_role.arn
 
   container_definitions = jsonencode([
     {
