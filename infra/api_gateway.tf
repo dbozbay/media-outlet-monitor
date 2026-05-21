@@ -35,17 +35,10 @@ resource "aws_apigatewayv2_integration" "api_lambda" {
   payload_format_version = "2.0"
 }
 
-# GET /articles route
-resource "aws_apigatewayv2_route" "get_articles" {
+# Catch-all route — FastAPI handles all routing
+resource "aws_apigatewayv2_route" "default" {
   api_id    = aws_apigatewayv2_api.articles_api.id
-  route_key = "GET /articles"
-  target    = "integrations/${aws_apigatewayv2_integration.api_lambda.id}"
-}
-
-# GET /articles/{target_name} route
-resource "aws_apigatewayv2_route" "get_articles_by_target" {
-  api_id    = aws_apigatewayv2_api.articles_api.id
-  route_key = "GET /articles/{target_name}"
+  route_key = "$default"
   target    = "integrations/${aws_apigatewayv2_integration.api_lambda.id}"
 }
 
