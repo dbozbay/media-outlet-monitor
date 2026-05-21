@@ -5,10 +5,10 @@ Fetches and parses articles from BBC News and OK! Magazine RSS feeds.
 
 import logging
 from datetime import datetime
-import requests
-from bs4 import BeautifulSoup
 
 import feedparser
+import requests
+from bs4 import BeautifulSoup
 from pydantic import BaseModel, ValidationError, field_validator
 from pydantic.types import PastDatetime
 
