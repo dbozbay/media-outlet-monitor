@@ -19,7 +19,7 @@ def sample_articles_df() -> pd.DataFrame:
     )
 
 
-class TestFilterDataframeByDays:
+class TestFilterDataFrameByDays:
     def test_filter_by_7_days_returns_only_recent(
         self, sample_articles_df: pd.DataFrame
     ) -> None:
