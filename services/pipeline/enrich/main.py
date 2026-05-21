@@ -150,6 +150,3 @@ def handler(event: list[dict], context: dict) -> list[dict]:
     ready_articles = prepare_articles_for_dynamodb(event)
     logger.info("Prepared %d articles for DynamoDB", len(ready_articles))
     return ready_articles
-
-
-
