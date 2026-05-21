@@ -38,7 +38,9 @@ def get_articles() -> list[dict]:
     return response.get("Items", [])
 
 
-def get_articles_by_target(target_name: str, sentiment: str | None = None) -> list[dict]:
+def get_articles_by_target(
+    target_name: str, sentiment: str | None = None
+) -> list[dict]:
     """Scan the DynamoDB table and filter articles by target name (case-insensitive)."""
     dynamodb = boto3.resource("dynamodb", region_name=getenv("AWS_REGION_NAME"))
     table = dynamodb.Table(getenv("DYNAMO_TABLE_NAME"))
@@ -50,7 +52,8 @@ def get_articles_by_target(target_name: str, sentiment: str | None = None) -> li
     ]
     if sentiment:
         items = [
-            item for item in items
+            item
+            for item in items
             if item.get("sentiment_label", "").lower() == sentiment.lower()
         ]
     return items
