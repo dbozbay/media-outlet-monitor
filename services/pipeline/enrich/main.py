@@ -1,7 +1,21 @@
 import logging
 import re
 from urllib.parse import urlparse
+import nltk
+import spacy
+from spacy.cli import download
+from nltk.corpus import stopwords
+from nltk.sentiment import SentimentIntensityAnalyzer
+from nltk.tokenize import word_tokenize
 
+nltk.download("punkt", quiet=True)
+nltk.download("punkt_tab", quiet=True)
+nltk.download("stopwords", quiet=True)
+nltk.download("vader_lexicon", quiet=True)
+
+download("en_core_web_sm")
+nlp = spacy.load("en_core_web_sm")
+sia = SentimentIntensityAnalyzer()
 logger = logging.getLogger(__name__)
 
 
@@ -42,25 +56,91 @@ def generate_article_id(source: str, url: str) -> str:
     return f"{source_id}#{article_id}"
 
 
-def prepare_article_for_dynamodb(article: dict) -> dict:
-    """Transforms an article dict into a dictionary suitable for DynamoDB."""
-    return {
-        "article_id": generate_article_id(article["source"], article["link"]),
-        "target_name": "unknown",
-        "at": article["pub_date"],
-        "title": article["title"],
-        "source": article["source"],
-        "url": article["link"],
-        "sentiment_score": None,
-        "sentiment_label": None,
-        "keywords": None,
-        "description": article["summary"],
-    }
+def get_text_for_analysis(article: dict) -> str:
+    """Combines title and summary for NLP analysis."""
+    return f"{article['title']} {article['summary']}"
+
+
+def extract_target_names(text: str) -> list[str]:
+    """Extracts people and organisations using spaCy."""
+    doc = nlp(text)
+
+    return list({ent.text for ent in doc.ents if ent.label_ in ["PERSON", "ORG"]})
+
+
+def get_sentiment(text: str) -> tuple[float, str]:
+    """Gets sentiment score and label using NLTK VADER."""
+    score = sia.polarity_scores(text)["compound"]
+
+    if score >= 0.05:
+        label = "positive"
+    elif score <= -0.05:
+        label = "negative"
+    else:
+        label = "neutral"
+
+    return score, label
+
+
+def extract_keywords(text: str) -> list[str]:
+    """Extracts unique keywords from text."""
+
+    stop_words = set(stopwords.words("english"))
+    tokens = word_tokenize(text.lower())
+
+    seen = set()
+    keywords = []
+
+    for token in tokens:
+        if (
+            token.isalpha()
+            and token not in stop_words
+            and len(token) > 2
+            and token not in seen
+        ):
+            seen.add(token)
+            keywords.append(token)
+
+    return keywords[:10]
+
+
+def prepare_article_for_dynamodb(article: dict) -> list[dict]:
+    """Transforms one article into one or more DynamoDB-ready records."""
+
+    text = get_text_for_analysis(article)
+
+    target_names = extract_target_names(text)
+    sentiment_score, sentiment_label = get_sentiment(text)
+    keywords = extract_keywords(text)
+
+    if not target_names:
+        target_names = ["unknown"]
+
+    return [
+        {
+            "article_id": generate_article_id(article["source"], article["link"]),
+            "target_name": target_name,
+            "at": article["pub_date"],
+            "title": article["title"],
+            "source": article["source"],
+            "url": article["link"],
+            "sentiment_score": str(sentiment_score),
+            "sentiment_label": sentiment_label,
+            "keywords": keywords,
+            "description": article["summary"],
+        }
+        for target_name in target_names
+    ]
 
 
 def prepare_articles_for_dynamodb(articles: list[dict]) -> list[dict]:
-    """Transforms a list of article dicts into DynamoDB-ready dictionaries."""
-    return [prepare_article_for_dynamodb(article) for article in articles]
+    """Transforms a list of articles into DynamoDB-ready dictionaries."""
+    prepared_articles = []
+
+    for article in articles:
+        prepared_articles.extend(prepare_article_for_dynamodb(article))
+
+    return prepared_articles
 
 
 def handler(event: list[dict], context: dict) -> list[dict]:
@@ -70,3 +150,6 @@ def handler(event: list[dict], context: dict) -> list[dict]:
     ready_articles = prepare_articles_for_dynamodb(event)
     logger.info("Prepared %d articles for DynamoDB", len(ready_articles))
     return ready_articles
+
+
+
