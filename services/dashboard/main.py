@@ -138,10 +138,7 @@ def display_article_cards(df: pd.DataFrame):
                 **Keywords:** {keywords}
                 """
             )
-            st.link_button(
-                "Read Full Article",
-                article["url"]
-            )
+            st.link_button("Read Full Article", article["url"])
 
 
 def filter_dataframe_by_days(df: pd.DataFrame, days: int) -> pd.DataFrame:
@@ -160,7 +157,9 @@ def filter_dataframe_by_days(df: pd.DataFrame, days: int) -> pd.DataFrame:
     return df[df["at"] >= cutoff_date]
 
 
-def create_mention_frequency_chart(df: pd.DataFrame, target_name: str, days: int) -> None:
+def create_mention_frequency_chart(
+    df: pd.DataFrame, target_name: str, days: int
+) -> None:
     """Creates a line chart showing mention frequency over time.
 
     Args:
@@ -189,6 +188,7 @@ def create_mention_frequency_chart(df: pd.DataFrame, target_name: str, days: int
 
     st.altair_chart(chart, use_container_width=True)
 
+
 st.title("Media Reputation Monitor")
 
 st.write(
@@ -214,7 +214,7 @@ if target_name:
             "Select time range for analysis:",
             options=[7, 30],
             format_func=lambda x: f"{x} Days",
-            horizontal=True
+            horizontal=True,
         )
 
         # Filter data by selected time range
@@ -222,9 +222,9 @@ if target_name:
 
         if not filtered_df.empty:
             # Display mention frequency chart
-            create_mention_frequency_chart(
-                filtered_df, target_name, time_range)
-            
+            create_mention_frequency_chart(filtered_df, target_name, time_range)
+
         else:
             st.warning(
-                f"No articles found for {target_name} in the last {time_range} days.")
+                f"No articles found for {target_name} in the last {time_range} days."
+            )
