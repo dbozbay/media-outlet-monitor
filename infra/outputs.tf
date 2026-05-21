@@ -19,9 +19,19 @@ output "reader_lambda_role_arn" {
 }
 
 # ECR Repository Outputs
-output "pipeline_repository_url" {
-  value       = aws_ecr_repository.repositories["pipeline"].repository_url
-  description = "URL of the c23-mesopelagic-pipeline ECR repository for push/pull operations"
+output "extract_repository_url" {
+  value       = aws_ecr_repository.repositories["extract"].repository_url
+  description = "URL of the c23-mesopelagic-extract ECR repository for push/pull operations"
+}
+
+output "enrich_repository_url" {
+  value       = aws_ecr_repository.repositories["enrich"].repository_url
+  description = "URL of the c23-mesopelagic-enrich ECR repository for push/pull operations"
+}
+
+output "load_repository_url" {
+  value       = aws_ecr_repository.repositories["load"].repository_url
+  description = "URL of the c23-mesopelagic-load ECR repository for push/pull operations"
 }
 
 output "streamlit_dashboard_repository_url" {

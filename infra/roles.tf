@@ -50,7 +50,9 @@ data "aws_iam_policy_document" "lambda_exec_policy" {
       "ecr:GetDownloadUrlForLayer"
     ]
     resources = [
-      aws_ecr_repository.repositories["pipeline"].arn
+      aws_ecr_repository.repositories["extract"].arn,
+      aws_ecr_repository.repositories["enrich"].arn,
+      aws_ecr_repository.repositories["load"].arn
     ]
   }
 }
