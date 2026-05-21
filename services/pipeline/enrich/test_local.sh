@@ -18,11 +18,11 @@ echo "Invoking Lambda handler..."
 RESPONSE=$(curl -s -X POST "http://localhost:9001/2015-03-31/functions/function/invocations" \
   -d '[
     {
-      "title": "Test Article",
+      "title": "Vanessa Feltz ready for The One",
       "source": "BBC News",
-      "link": "https://www.bbc.co.uk/news/articles/abc123def",
-      "summary": "A test article summary.",
-      "pub_date": "2025-05-20T10:00:00"
+      "link": "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008",
+      "summary": "Vanessa Feltz has opened up about her love life.",
+      "pub_date": "2026-05-19T13:33:23"
     }
   ]')
 

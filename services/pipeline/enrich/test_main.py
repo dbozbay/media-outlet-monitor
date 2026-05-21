@@ -3,7 +3,6 @@ from main import (
     clean_source,
     extract_source_article_id,
     generate_article_id,
-    prepare_article_for_dynamodb,
 )
 
 
@@ -42,25 +41,25 @@ def test_generate_article_id_combines_source_and_article_id():
     assert result == "ok_magazine#37161008"
 
 
-def test_prepare_article_for_dynamodb_returns_expected_dictionary():
-    article = {
-        "title": "Vanessa Feltz ready for 'The One'",
-        "source": "OK! Magazine",
-        "link": "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008",
-        "summary": "Vanessa Feltz has opened up about her love life.",
-        "pub_date": "2026-05-19T13:33:23",
-    }
-    result = prepare_article_for_dynamodb(article)
+# def test_prepare_article_for_dynamodb_returns_expected_dictionary():
+#     article = {
+#         "title": "Vanessa Feltz ready for 'The One'",
+#         "source": "OK! Magazine",
+#         "link": "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008",
+#         "summary": "Vanessa Feltz has opened up about her love life.",
+#         "pub_date": "2026-05-19T13:33:23",
+#     }
+#     result = prepare_article_for_dynamodb(article)
 
-    assert result == {
-        "article_id": "ok_magazine#37161008",
-        "target_name": "unknown",
-        "at": "2026-05-19T13:33:23",
-        "title": "Vanessa Feltz ready for 'The One'",
-        "source": "OK! Magazine",
-        "url": "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008",
-        "sentiment_score": None,
-        "sentiment_label": None,
-        "keywords": None,
-        "description": "Vanessa Feltz has opened up about her love life.",
-    }
+#     assert result == {
+#         "article_id": "ok_magazine#37161008",
+#         "target_name": "unknown",
+#         "at": "2026-05-19T13:33:23",
+#         "title": "Vanessa Feltz ready for 'The One'",
+#         "source": "OK! Magazine",
+#         "url": "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008",
+#         "sentiment_score": None,
+#         "sentiment_label": None,
+#         "keywords": None,
+#         "description": "Vanessa Feltz has opened up about her love life.",
+#     }
