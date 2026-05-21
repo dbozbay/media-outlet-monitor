@@ -1,3 +1,14 @@
+# Assume Role Policy for Lambda Services
+data "aws_iam_policy_document" "lambda_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+  }
+}
+
 # Lambda Execution Role (shared by all three Lambda functions)
 resource "aws_iam_role" "lambda_exec_role" {
   name               = "c23-mesopelagic-lambda-exec-role"
@@ -15,8 +26,8 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# Inline policy for DynamoDB access
-data "aws_iam_policy_document" "lambda_dynamodb_policy" {
+# Inline policy for DynamoDB and ECR access
+data "aws_iam_policy_document" "lambda_exec_policy" {
   statement {
     actions = [
       "dynamodb:PutItem",
@@ -25,22 +36,29 @@ data "aws_iam_policy_document" "lambda_dynamodb_policy" {
     ]
     resources = [aws_dynamodb_table.articles.arn]
   }
+
+  statement {
+    actions = [
+      "ecr:GetAuthorizationToken"
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer"
+    ]
+    resources = [
+      aws_ecr_repository.repositories["pipeline"].arn
+    ]
+  }
 }
 
-resource "aws_iam_role_policy" "lambda_dynamodb" {
-  name   = "c23-mesopelagic-lambda-dynamodb-policy"
+resource "aws_iam_role_policy" "lambda_exec" {
+  name   = "c23-mesopelagic-lambda-exec-policy"
   role   = aws_iam_role.lambda_exec_role.id
-  policy = data.aws_iam_policy_document.lambda_dynamodb_policy.json
-}
-# Assume Role Policy for Lambdas
-data "aws_iam_policy_document" "lambda_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
-    }
-  }
+  policy = data.aws_iam_policy_document.lambda_exec_policy.json
 }
 
 # Loader Lambda Role (Write Access)
@@ -114,4 +132,47 @@ resource "aws_iam_role_policy" "reader_policy" {
   name   = "${var.reader_role_name}DynamoDBPolicy"
   role   = aws_iam_role.reader_lambda_role.id
   policy = data.aws_iam_policy_document.reader_policy.json
+}
+
+# EventBridge Scheduler Execution Role and Policies
+
+# Assume Role Policy for EventBridge Scheduler Service
+data "aws_iam_policy_document" "eventbridge_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["scheduler.amazonaws.com"]
+    }
+  }
+}
+
+# IAM Role for EventBridge to invoke Step Functions
+resource "aws_iam_role" "c23_mesopelagic_eventbridge_sfn_role" {
+  name               = "c23-mesopelagic-eventbridge-sfn-role"
+  assume_role_policy = data.aws_iam_policy_document.eventbridge_assume_role.json
+
+  tags = {
+    Environment = var.environment
+    Service     = "media-outlet-monitor"
+  }
+}
+
+# Inline policy granting EventBridge permission to invoke Step Functions
+resource "aws_iam_role_policy" "c23_mesopelagic_eventbridge_sfn_policy" {
+  name   = "c23-mesopelagic-eventbridge-sfn-policy"
+  role   = aws_iam_role.c23_mesopelagic_eventbridge_sfn_role.id
+  policy = data.aws_iam_policy_document.eventbridge_sfn_policy.json
+}
+
+# Policy document for Step Functions execution
+data "aws_iam_policy_document" "eventbridge_sfn_policy" {
+  statement {
+    actions = [
+      "states:StartExecution"
+    ]
+    resources = [
+      data.aws_sfn_state_machine.pipeline_orchestrator.arn
+    ]
+  }
 }
