@@ -1,7 +1,9 @@
+import json
 import logging
 import re
 from urllib.parse import urlparse
 
+import boto3
 import spacy
 from nltk.corpus import stopwords
 from nltk.sentiment import SentimentIntensityAnalyzer
@@ -152,10 +154,23 @@ def prepare_articles_for_dynamodb(articles: list[dict]) -> list[dict]:
     return prepared_articles
 
 
-def handler(event: list[dict], context: dict) -> list[dict]:
+def _load_articles_from_s3(event: dict) -> list[dict]:
+    """Loads serialized articles from S3 using the provided event reference."""
+    s3_bucket = event["s3_bucket"]
+    s3_key = event["s3_key"]
+
+    s3_client = boto3.client("s3")
+    response = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
+    body = response["Body"].read().decode("utf-8")
+
+    return json.loads(body)
+
+
+def handler(event: list[dict] | dict, context: dict) -> list[dict]:
     """AWS Lambda handler that transforms serialized articles into DynamoDB-ready dicts."""
     configure_logging()
-    logger.info("Enrich handler received %d articles", len(event))
-    ready_articles = prepare_articles_for_dynamodb(event)
+    articles = _load_articles_from_s3(event) if isinstance(event, dict) else event
+    logger.info("Enrich handler received %d articles", len(articles))
+    ready_articles = prepare_articles_for_dynamodb(articles)
     logger.info("Prepared %d articles for DynamoDB", len(ready_articles))
     return ready_articles

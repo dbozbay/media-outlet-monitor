@@ -1,3 +1,6 @@
+from io import BytesIO
+from unittest.mock import patch
+
 import pytest
 from main import (
     clean_source,
@@ -8,6 +11,7 @@ from main import (
     get_text_for_analysis,
     get_sentiment,
     extract_keywords,
+    handler,
     prepare_article_for_dynamodb,
     prepare_articles_for_dynamodb,
 )
@@ -223,3 +227,33 @@ def test_prepare_articles_for_dynamodb_skips_articles_without_targets():
     result = prepare_articles_for_dynamodb(articles)
 
     assert result == []
+
+
+def test_handler_loads_articles_from_s3_reference():
+    raw_articles = '[{"title": "Taylor Swift wins award", "summary": "Taylor Swift was praised by fans.", "body": "Taylor Swift gave an excellent performance.", "source": "BBC News", "link": "https://www.bbc.com/news/articles/c9weyz8nk4ro", "pub_date": "2026-05-21T10:00:00"}]'
+    parsed_articles = [
+        {
+            "title": "Taylor Swift wins award",
+            "summary": "Taylor Swift was praised by fans.",
+            "body": "Taylor Swift gave an excellent performance.",
+            "source": "BBC News",
+            "link": "https://www.bbc.com/news/articles/c9weyz8nk4ro",
+            "pub_date": "2026-05-21T10:00:00",
+        }
+    ]
+    ready_articles = [{"article_id": "bbc_news#c9weyz8nk4ro", "target_name": "Taylor Swift"}]
+
+    with (
+        patch("main.boto3.client") as mock_client_factory,
+        patch("main.prepare_articles_for_dynamodb", return_value=ready_articles) as mock_prepare,
+    ):
+        mock_s3_client = mock_client_factory.return_value
+        mock_s3_client.get_object.return_value = {"Body": BytesIO(raw_articles.encode("utf-8"))}
+
+        result = handler({"s3_bucket": "bucket", "s3_key": "extract/articles.json"}, {})
+
+    mock_s3_client.get_object.assert_called_once_with(
+        Bucket="bucket", Key="extract/articles.json"
+    )
+    mock_prepare.assert_called_once_with(parsed_articles)
+    assert result == ready_articles
