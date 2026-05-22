@@ -3,6 +3,13 @@ from main import (
     clean_source,
     extract_source_article_id,
     generate_article_id,
+    clean_target_name,
+    extract_target_names,
+    get_text_for_analysis,
+    get_sentiment,
+    extract_keywords,
+    prepare_article_for_dynamodb,
+    prepare_articles_for_dynamodb,
 )
 
 
@@ -39,3 +46,180 @@ def test_generate_article_id_combines_source_and_article_id():
     url = "https://www.ok.co.uk/celebrity-news/vanessa-feltz-ready-the-one-37161008"
     result = generate_article_id(source, url)
     assert result == "ok_magazine#37161008"
+
+
+def test_clean_target_name_removes_trailing_quotes():
+    result = clean_target_name("Jake Quickenden '")
+
+    assert result == "Jake Quickenden"
+
+
+def test_extract_target_names_removes_duplicate_cleaned_names():
+    text = "Jake Quickenden said Jake Quickenden ' was preparing for a new event."
+
+    result = extract_target_names(text)
+
+    assert "Jake Quickenden" in result
+    assert "Jake Quickenden '" not in result
+    assert result.count("Jake Quickenden") == 1
+
+
+def test_get_text_for_analysis_combines_title_summary_and_body():
+    article = {
+        "title": "Taylor Swift wins award",
+        "summary": "Fans praised the singer.",
+        "body": "The article body says the performance was excellent.",
+    }
+
+    result = get_text_for_analysis(article)
+
+    assert "Taylor Swift wins award" in result
+    assert "Fans praised the singer." in result
+    assert "performance was excellent" in result
+
+
+def test_get_sentiment_returns_positive_label():
+    score, label = get_sentiment("This is excellent, amazing and wonderful.")
+
+    assert isinstance(score, float)
+    assert label == "positive"
+
+
+def test_get_sentiment_returns_negative_label():
+    score, label = get_sentiment("This is terrible, awful and disappointing.")
+
+    assert isinstance(score, float)
+    assert label == "negative"
+
+
+def test_get_sentiment_returns_neutral_label():
+    score, label = get_sentiment("The article was published today.")
+
+    assert isinstance(score, float)
+    assert label == "neutral"
+
+
+def test_extract_keywords_returns_list():
+    result = extract_keywords("Taylor Swift concert fans praised concert fans")
+
+    assert isinstance(result, list)
+
+
+def test_extract_keywords_returns_top_keywords_without_duplicates():
+    result = extract_keywords("fans fans fans concert concert taylor swift")
+
+    assert result[0] == "fans"
+    assert "concert" in result
+    assert len(result) == len(set(result))
+
+
+def test_extract_keywords_limits_to_top_10():
+    text = "one two three four five six seven eight nine ten eleven twelve"
+
+    result = extract_keywords(text)
+
+    assert len(result) <= 10
+
+
+def test_prepare_article_for_dynamodb_returns_records_for_detected_target():
+    article = {
+        "title": "Taylor Swift wins award",
+        "summary": "Taylor Swift was praised by fans.",
+        "body": "Taylor Swift gave an excellent performance.",
+        "source": "BBC News",
+        "link": "https://www.bbc.com/news/articles/c9weyz8nk4ro",
+        "pub_date": "2026-05-21T10:00:00",
+    }
+
+    result = prepare_article_for_dynamodb(article)
+
+    assert isinstance(result, list)
+    assert len(result) >= 1
+    assert result[0]["target_name"] == "Taylor Swift"
+
+
+def test_prepare_article_for_dynamodb_skips_article_with_no_target():
+    article = {
+        "title": "Weather is sunny today",
+        "summary": "The weather is warm and calm.",
+        "body": "There are blue skies and light wind.",
+        "source": "BBC News",
+        "link": "https://www.bbc.com/news/articles/c9weyz8nk4ro",
+        "pub_date": "2026-05-21T10:00:00",
+    }
+
+    result = prepare_article_for_dynamodb(article)
+
+    assert result == []
+
+
+def test_prepare_article_for_dynamodb_contains_required_fields():
+    article = {
+        "title": "Taylor Swift wins award",
+        "summary": "Taylor Swift was praised by fans.",
+        "body": "Taylor Swift gave an excellent performance.",
+        "source": "BBC News",
+        "link": "https://www.bbc.com/news/articles/c9weyz8nk4ro",
+        "pub_date": "2026-05-21T10:00:00",
+    }
+
+    result = prepare_article_for_dynamodb(article)
+
+    assert "article_id" in result[0]
+    assert "target_name" in result[0]
+    assert "sentiment_score" in result[0]
+    assert "keywords" in result[0]
+
+
+def test_prepare_articles_for_dynamodb_returns_list():
+    articles = [
+        {
+            "title": "Taylor Swift wins award",
+            "summary": "Taylor Swift was praised.",
+            "body": "Taylor Swift gave an excellent performance.",
+            "source": "BBC News",
+            "link": "https://www.bbc.com/news/articles/c9weyz8nk4ro",
+            "pub_date": "2026-05-21T10:00:00",
+        }
+    ]
+
+    result = prepare_articles_for_dynamodb(articles)
+
+    assert isinstance(result, list)
+
+
+def test_prepare_articles_for_dynamodb_flattens_multiple_article_outputs():
+    articles = [
+        {
+            "title": "Taylor Swift and Drake attend event",
+            "summary": "Taylor Swift and Drake were both mentioned.",
+            "body": "Taylor Swift and Drake appeared together.",
+            "source": "BBC News",
+            "link": "https://www.bbc.com/news/articles/c9weyz8nk4ro",
+            "pub_date": "2026-05-21T10:00:00",
+        }
+    ]
+
+    result = prepare_articles_for_dynamodb(articles)
+
+    target_names = [record["target_name"] for record in result]
+
+    assert "Taylor Swift" in target_names
+    assert "Drake" in target_names
+
+
+def test_prepare_articles_for_dynamodb_skips_articles_without_targets():
+    articles = [
+        {
+            "title": "Weather is sunny today",
+            "summary": "The weather is warm.",
+            "body": "There are blue skies.",
+            "source": "BBC News",
+            "link": "https://www.bbc.com/news/articles/c9weyz8nk4ro",
+            "pub_date": "2026-05-21T10:00:00",
+        }
+    ]
+
+    result = prepare_articles_for_dynamodb(articles)
+
+    assert result == []
