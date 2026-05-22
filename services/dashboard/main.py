@@ -5,7 +5,6 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 from boto3 import resource
-from boto3.dynamodb.conditions import Key
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,11 +20,21 @@ def get_dynamodb_table() -> Any:
 
 
 def query_articles_by_target(target_name: str) -> pd.DataFrame:
-    """Queries DynamoDB for articles about a specific target."""
+    """Scans DynamoDB for articles about a specific target."""
+
     table = get_dynamodb_table()
-    response = table.query(KeyConditionExpression=Key("target_name").eq(target_name))
+
+    response = table.scan()
+
     items = response.get("Items", [])
-    return pd.DataFrame(items)
+
+    matching_items = []
+
+    for item in items:
+        if item["target_name"].lower() == target_name.strip().lower():
+            matching_items.append(item)
+
+    return pd.DataFrame(matching_items)
 
 
 def filter_dataframe_by_days(df: pd.DataFrame, days: int) -> pd.DataFrame:
@@ -63,28 +72,24 @@ def create_mention_frequency_chart(
 
 
 def create_sentiment_over_time_chart(df: pd.DataFrame, target_name: str) -> None:
-    """Creates a continuous Altair line chart showing sentiment over time."""
+    """Creates a daily average sentiment trend chart."""
 
+    df = df.copy()
     df["at"] = pd.to_datetime(df["at"])
     df["sentiment_score"] = pd.to_numeric(df["sentiment_score"])
+    df["date"] = df["at"].dt.date
 
-    df = df.sort_values("at")
+    daily_sentiment_df = df.groupby("date")["sentiment_score"].mean().reset_index()
 
     chart = (
-        alt.Chart(df)
+        alt.Chart(daily_sentiment_df)
         .mark_line(point=True)
         .encode(
-            x=alt.X("at:T", title="Published At"),
-            y=alt.Y("sentiment_score:Q", title="Sentiment Score"),
-            tooltip=[
-                "title",
-                "source",
-                "sentiment_label",
-                "sentiment_score",
-                "at",
-            ],
+            x=alt.X("date:T", title="Date"),
+            y=alt.Y("sentiment_score:Q", title="Average Sentiment Score"),
+            tooltip=["date:T", "sentiment_score:Q"],
         )
-        .properties(title=f"Sentiment Trend for {target_name}")
+        .properties(title=f"Average Daily Sentiment for {target_name}")
     )
 
     st.altair_chart(chart, use_container_width=True)
@@ -113,13 +118,79 @@ def display_article_cards(df: pd.DataFrame) -> None:
             st.subheader(article["title"])
             st.markdown(
                 f"""
-                **Source:** {article["source"]}
-                **Published:** {article["at"]}
-                **Sentiment:** {sentiment_emoji} {article["sentiment_score"]} ({sentiment})
-                **Keywords:** {keywords}
-                """
+                    **Source:** {article["source"]}
+
+                    **Published:** {article["at"]}
+
+                    **Sentiment:** {sentiment_emoji} {article["sentiment_score"]} ({sentiment})
+
+                    **Keywords:** {keywords}
+                    """
             )
             st.link_button("Read Full Article", article["url"])
+
+
+def create_sentiment_distribution_chart(df: pd.DataFrame, target_name: str) -> None:
+    """Creates a bar chart showing positive, neutral and negative article counts."""
+    sentiment_df = df["sentiment_label"].value_counts().reset_index()
+    sentiment_df.columns = ["sentiment_label", "count"]
+
+    chart = (
+        alt.Chart(sentiment_df)
+        .mark_bar()
+        .encode(
+            x=alt.X("sentiment_label:N", title="Sentiment"),
+            y=alt.Y("count:Q", title="Number of Articles"),
+            tooltip=["sentiment_label", "count"],
+        )
+        .properties(title=f"Sentiment Breakdown for {target_name}")
+    )
+
+    st.altair_chart(chart, use_container_width=True)
+
+
+def create_top_keywords_chart(df: pd.DataFrame, target_name: str) -> None:
+    """Creates a bar chart showing the most common keywords."""
+    all_keywords = []
+
+    for keywords in df["keywords"]:
+        if isinstance(keywords, list):
+            all_keywords.extend(keywords)
+
+    keyword_df = pd.Series(all_keywords).value_counts().head(10).reset_index()
+    keyword_df.columns = ["keyword", "count"]
+
+    chart = (
+        alt.Chart(keyword_df)
+        .mark_bar()
+        .encode(
+            x=alt.X("count:Q", title="Mentions"),
+            y=alt.Y("keyword:N", sort="-x", title="Keyword"),
+            tooltip=["keyword", "count"],
+        )
+        .properties(title=f"Top Keywords for {target_name}")
+    )
+
+    st.altair_chart(chart, use_container_width=True)
+
+
+def create_source_distribution_chart(df: pd.DataFrame, target_name: str) -> None:
+    """Creates a bar chart showing article count by source."""
+    source_df = df["source"].value_counts().reset_index()
+    source_df.columns = ["source", "count"]
+
+    chart = (
+        alt.Chart(source_df)
+        .mark_bar()
+        .encode(
+            x=alt.X("source:N", title="Source"),
+            y=alt.Y("count:Q", title="Number of Articles"),
+            tooltip=["source", "count"],
+        )
+        .properties(title=f"Coverage by Source for {target_name}")
+    )
+
+    st.altair_chart(chart, use_container_width=True)
 
 
 def main() -> None:
@@ -143,6 +214,9 @@ def main() -> None:
             st.success(f"Found {len(df)} articles for {target_name}.")
             display_article_cards(df)
             create_sentiment_over_time_chart(df, target_name)
+            create_sentiment_distribution_chart(df, target_name)
+            create_top_keywords_chart(df, target_name)
+            create_source_distribution_chart(df, target_name)
 
             # Time range selector for charts
             time_range = st.radio(
