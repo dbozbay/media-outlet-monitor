@@ -50,8 +50,8 @@ def generate_article_id(source: str, url: str) -> str:
 
 
 def get_text_for_analysis(article: dict) -> str:
-    """Combines title and summary for NLP analysis."""
-    return f"{article['title']} {article['summary']}"
+    """Combines title, summary, and body for NLP analysis."""
+    return f"{article['title']} {article['summary']} {article['body']}"
 
 
 def extract_target_names(text: str) -> list[str]:
@@ -76,25 +76,34 @@ def get_sentiment(text: str) -> tuple[float, str]:
 
 
 def extract_keywords(text: str) -> list[str]:
-    """Extracts unique keywords from text."""
+    """Extracts the top 10 keywords from text."""
 
     stop_words = set(stopwords.words("english"))
     tokens = word_tokenize(text.lower())
 
-    seen = set()
-    keywords = []
+    keyword_counts = {}
 
     for token in tokens:
         if (
             token.isalpha()
             and token not in stop_words
             and len(token) > 2
-            and token not in seen
         ):
-            seen.add(token)
-            keywords.append(token)
+            if token not in keyword_counts:
+                keyword_counts[token] = 1
+            else:
+                keyword_counts[token] += 1
 
-    return keywords[:10]
+    sorted_keywords = sorted(
+        keyword_counts.items(),
+        key=lambda item: item[1],
+        reverse=True
+    )
+
+    return [
+        keyword
+        for keyword, count in sorted_keywords[:10]
+    ]
 
 
 def prepare_article_for_dynamodb(article: dict) -> list[dict]:
@@ -107,7 +116,11 @@ def prepare_article_for_dynamodb(article: dict) -> list[dict]:
     keywords = extract_keywords(text)
 
     if not target_names:
-        target_names = ["unknown"]
+        logger.info(
+            "Skipping article with no target names: %s",
+            article["title"]
+        )
+        return []
 
     return [
         {
