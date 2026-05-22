@@ -1,6 +1,7 @@
 import time
 from datetime import datetime
 from unittest.mock import MagicMock, patch
+import requests
 
 import pytest
 from main import (
@@ -254,3 +255,100 @@ class TestHandler:
         assert len(body) == 1
         assert body[0]["title"] == "Test Article"
         assert body[0]["source"] == "BBC News"
+def test_article_body_field_is_required():
+    with pytest.raises(ValidationError):
+        Article(
+            title="Hello",
+            source="BBC News",
+            link="https://example.com",
+            summary="Summary",
+            pub_date=datetime(2024, 1, 1),
+        )
+
+
+def test_parse_articles_adds_body_to_article(sample_feed_entry):
+    with patch("main.fetch_article_body", return_value="Full article body text."):
+        articles = parse_articles([sample_feed_entry], "BBC News")
+
+    assert len(articles) == 1
+    assert articles[0].body == "Full article body text."
+
+
+def test_parse_articles_calls_fetch_article_body_with_link(sample_feed_entry):
+    with patch("main.fetch_article_body", return_value="Full article body text.") as mock_fetch:
+        parse_articles([sample_feed_entry], "BBC News")
+
+    mock_fetch.assert_called_once_with("https://www.bbc.co.uk/news/test-123")
+
+
+def test_extract_body_text_returns_empty_string_when_no_paragraphs():
+    html = """
+    <html>
+        <body>
+            <div>No paragraph tags here.</div>
+        </body>
+    </html>
+    """
+
+    result = extract_body_text(html)
+
+    assert result == ""
+
+
+def test_extract_body_text_ignores_empty_paragraphs():
+    html = """
+    <html>
+        <body>
+            <p></p>
+            <p>Useful paragraph.</p>
+        </body>
+    </html>
+    """
+
+    result = extract_body_text(html)
+
+    assert result == "Useful paragraph."
+
+
+def test_fetch_article_body_extracts_text_on_success():
+    mock_response = type(
+        "MockResponse",
+        (),
+        {
+            "text": "<html><body><p>Article body text.</p></body></html>",
+            "raise_for_status": lambda self: None,
+        },
+    )()
+
+    with patch("main.requests.get", return_value=mock_response):
+        result = fetch_article_body("https://example.com/article")
+
+    assert result == "Article body text."
+
+
+def test_fetch_article_body_returns_empty_string_on_request_error():
+    with patch(
+        "main.requests.get",
+        side_effect=requests.RequestException("connection failed"),
+    ):
+        result = fetch_article_body("https://example.com/article")
+
+    assert result == ""
+
+
+def test_fetch_article_body_uses_browser_user_agent():
+    mock_response = type(
+        "MockResponse",
+        (),
+        {
+            "text": "<html><body><p>Article body text.</p></body></html>",
+            "raise_for_status": lambda self: None,
+        },
+    )()
+
+    with patch("main.requests.get", return_value=mock_response) as mock_get:
+        fetch_article_body("https://example.com/article")
+
+    _, kwargs = mock_get.call_args
+
+    assert kwargs["headers"]["User-Agent"] == "Mozilla/5.0"
