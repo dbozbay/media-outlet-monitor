@@ -156,5 +156,5 @@ def handler(event: dict, context: dict) -> dict:
         ContentType="application/json",
     )
 
-    logger.info(f"Uploaded articles to s3://{bucket}/{key}")
+    logger.info("Uploaded articles to s3://%s/%s", bucket, key)
     return {"s3_bucket": bucket, "s3_key": key}
