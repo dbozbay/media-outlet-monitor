@@ -9,6 +9,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - services/pipeline/extract
+          - services/pipeline/enrich
+          - services/pipeline/load
+          - services/api
+          - services/dashboard
 
     steps:
       - uses: actions/checkout@v6
@@ -18,5 +26,8 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Run all tests
-        run: ./scripts/test-all.sh
+      - name: Run tests
+        run: cd ${{ matrix.service }} && uv run pytest --cov
+
+      - name: Lint with Ruff
+        run: cd ${{ matrix.service }} && uv run ruff check .

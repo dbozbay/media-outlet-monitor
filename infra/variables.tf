@@ -47,14 +47,14 @@ variable "ecr_repositories" {
       name = "c23-mesopelagic-streamlit-dashboard"
     }
     api_collection = {
-      name = "c23-mesopelagic-api-collection"
+      name = "c23-mesopelagic-api"
     }
   }
 }
 
 variable "articles_bucket_name" {
   description = "Name of the S3 bucket for intermediate pipeline data"
-  default     = "c23-mesopelagic-articles"
+  default     = "c23-mesopelagic-article-bucket"
   type        = string
 }
 

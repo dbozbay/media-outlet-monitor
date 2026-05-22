@@ -1,6 +1,5 @@
 import pandas as pd
 import pytest
-
 from main import filter_dataframe_by_days
 
 

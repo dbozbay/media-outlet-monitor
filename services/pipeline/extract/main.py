@@ -6,7 +6,7 @@ Fetches and parses articles from BBC News and OK! Magazine RSS feeds.
 import json
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 
 import boto3
 import feedparser
@@ -21,16 +21,6 @@ FEEDS = {
 }
 
 logger = logging.getLogger(__name__)
-
-
-def configure_logging() -> None:
-    """Configure root logging. Call once from the entrypoint."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format="{asctime} - {levelname} - {name} - {message}",
-        style="{",
-        datefmt="%Y-%m-%d %H:%M",
-    )
 
 
 class Article(BaseModel):
@@ -48,18 +38,6 @@ class Article(BaseModel):
         if value not in FEEDS.keys():
             raise ValueError(f"Invalid source: {value}")
         return value
-
-
-def scrape_articles() -> list[Article]:
-    """Fetches and parses the RSS feed, returning a list of Article objects."""
-    articles = []
-    for source, url in FEEDS.items():
-        logger.info("Fetching feed from %s", url)
-        entries = fetch_feed(url)
-        logger.info("Fetched %d entries from %s", len(entries), url)
-        articles.extend(parse_articles(entries, source))
-    logger.info("Scraped %d articles total", len(articles))
-    return articles
 
 
 def fetch_feed(url: str) -> list[dict]:
@@ -102,6 +80,18 @@ def parse_articles(entries: list[dict], source: str) -> list[Article]:
     return articles
 
 
+def scrape_articles() -> list[Article]:
+    """Fetches and parses the RSS feed, returning a list of Article objects."""
+    articles = []
+    for source, url in FEEDS.items():
+        logger.info("Fetching feed from %s", url)
+        entries = fetch_feed(url)
+        logger.info("Fetched %d entries from %s", len(entries), url)
+        articles.extend(parse_articles(entries, source))
+    logger.info("Scraped %d articles total", len(articles))
+    return articles
+
+
 def convert_time_struct_to_datetime(time: tuple) -> datetime:
     """Converts a time.struct_time to a datetime object."""
     return datetime(*time[:6])
@@ -138,16 +128,8 @@ def extract_body_text(html: str) -> str:
     return " ".join(paragraph_text)
 
 
-def handler(event: dict, context: dict) -> dict:
-    """Lambda handler that scrapes articles, uploads to S3, and returns the S3 reference."""
-    configure_logging()
-    logger.info("Extract handler invoked")
-    articles: list[Article] = scrape_articles()
-    logger.info("Scraped %d articles, uploading to S3", len(articles))
-
-    bucket = os.environ["S3_BUCKET_NAME"]
-    key = f"extract/{datetime.now(timezone.utc).isoformat()}.json"
-
+def upload_articles_to_s3(articles: list[Article], bucket: str, key: str) -> None:
+    """Uploads the list of Article objects to S3 as a JSON file."""
     s3_client = boto3.client("s3")
     s3_client.put_object(
         Bucket=bucket,
@@ -155,6 +137,21 @@ def handler(event: dict, context: dict) -> dict:
         Body=json.dumps([article.model_dump(mode="json") for article in articles]),
         ContentType="application/json",
     )
+    logger.info("Uploaded articles to s3://%s/%s", bucket, key)
+
+
+def handler(event: dict, context: dict) -> dict:
+    """Lambda handler that scrapes articles, uploads to S3, and returns the S3 reference."""
+    logger.info("Extract handler invoked")
+    articles: list[Article] = scrape_articles()
+    logger.info("Scraped %d articles, uploading to S3", len(articles))
+
+    at = datetime.now().strftime("%Y-%m-%dT%H:%M")
+
+    bucket = os.environ["S3_BUCKET_NAME"]
+    key = f"scraped_articles/{at}.json"
+
+    upload_articles_to_s3(articles, bucket, key)
 
     logger.info("Uploaded articles to s3://%s/%s", bucket, key)
     return {"s3_bucket": bucket, "s3_key": key}

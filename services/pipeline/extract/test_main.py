@@ -1,9 +1,9 @@
 import time
 from datetime import datetime
 from unittest.mock import MagicMock, patch
-import requests
 
 import pytest
+import requests
 from main import (
     Article,
     convert_time_struct_to_datetime,
@@ -231,7 +231,7 @@ class TestHandler:
         assert "s3_bucket" in result
         assert "s3_key" in result
         assert result["s3_bucket"] == "test-bucket"
-        assert result["s3_key"].startswith("extract/")
+        assert result["s3_key"].startswith("scraped_articles/")
         assert result["s3_key"].endswith(".json")
 
     def test_handler_uploads_to_s3(self, mock_s3_client, mock_env, mock_articles):
@@ -240,7 +240,7 @@ class TestHandler:
         mock_s3_client.put_object.assert_called_once()
         call_kwargs = mock_s3_client.put_object.call_args[1]
         assert call_kwargs["Bucket"] == "test-bucket"
-        assert call_kwargs["Key"].startswith("extract/")
+        assert call_kwargs["Key"].startswith("scraped_articles/")
         assert call_kwargs["ContentType"] == "application/json"
 
     def test_handler_upload_contains_serialized_articles(
@@ -255,9 +255,11 @@ class TestHandler:
         assert len(body) == 1
         assert body[0]["title"] == "Test Article"
         assert body[0]["source"] == "BBC News"
+
+
 def test_article_body_field_is_required():
     with pytest.raises(ValidationError):
-        Article(
+        Article(  # type: ignore[missing-argument]
             title="Hello",
             source="BBC News",
             link="https://example.com",
@@ -275,7 +277,9 @@ def test_parse_articles_adds_body_to_article(sample_feed_entry):
 
 
 def test_parse_articles_calls_fetch_article_body_with_link(sample_feed_entry):
-    with patch("main.fetch_article_body", return_value="Full article body text.") as mock_fetch:
+    with patch(
+        "main.fetch_article_body", return_value="Full article body text."
+    ) as mock_fetch:
         parse_articles([sample_feed_entry], "BBC News")
 
     mock_fetch.assert_called_once_with("https://www.bbc.co.uk/news/test-123")

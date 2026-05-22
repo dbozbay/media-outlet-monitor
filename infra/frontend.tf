@@ -181,19 +181,3 @@ resource "aws_ecs_service" "dashboard" {
     aws_security_group.dashboard
   ]
 }
-
-# Outputs
-output "dashboard_service_name" {
-  value       = aws_ecs_service.dashboard.name
-  description = "Name of the Streamlit dashboard ECS service"
-}
-
-output "dashboard_log_group" {
-  value       = aws_cloudwatch_log_group.dashboard.name
-  description = "CloudWatch log group for dashboard logs"
-}
-
-output "dashboard_security_group_id" {
-  value       = aws_security_group.dashboard.id
-  description = "Security group ID for the dashboard service"
-}
