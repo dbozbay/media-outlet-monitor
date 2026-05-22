@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from datetime import datetime
 from urllib.parse import urlparse
 
 import boto3
@@ -11,17 +12,8 @@ from nltk.tokenize import word_tokenize
 
 nlp = spacy.load("en_core_web_sm")
 sia = SentimentIntensityAnalyzer()
+
 logger = logging.getLogger(__name__)
-
-
-def configure_logging() -> None:
-    """Configure root logging. Call once from the entrypoint."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format="{asctime} - {levelname} - {name} - {message}",
-        style="{",
-        datefmt="%Y-%m-%d %H:%M",
-    )
 
 
 def extract_source_article_id(url: str) -> str:
@@ -71,11 +63,7 @@ def extract_target_names(text: str) -> list[str]:
         if ent.label_ in ["PERSON", "ORG"]
     }
 
-    return [
-        name
-        for name in target_names
-        if name
-    ]
+    return [name for name in target_names if name]
 
 
 def get_sentiment(text: str) -> tuple[float, str]:
@@ -116,9 +104,7 @@ def extract_keywords(text: str) -> list[str]:
 
 def prepare_article_for_dynamodb(article: dict) -> list[dict]:
     """Transforms one article into one or more DynamoDB-ready records."""
-
     text = get_text_for_analysis(article)
-
     target_names = extract_target_names(text)
     sentiment_score, sentiment_label = get_sentiment(text)
     keywords = extract_keywords(text)
@@ -147,30 +133,43 @@ def prepare_article_for_dynamodb(article: dict) -> list[dict]:
 def prepare_articles_for_dynamodb(articles: list[dict]) -> list[dict]:
     """Transforms a list of articles into DynamoDB-ready dictionaries."""
     prepared_articles = []
-
     for article in articles:
         prepared_articles.extend(prepare_article_for_dynamodb(article))
-
     return prepared_articles
 
 
-def _load_articles_from_s3(event: dict) -> list[dict]:
-    """Loads serialized articles from S3 using the provided event reference."""
-    s3_bucket = event["s3_bucket"]
-    s3_key = event["s3_key"]
-
+def load_articles_from_s3(s3_bucket: str, s3_key: str) -> list[dict]:
+    """Loads serialized articles from S3 using the provided bucket and key."""
     s3_client = boto3.client("s3")
     response = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
     body = response["Body"].read().decode("utf-8")
-
     return json.loads(body)
 
 
-def handler(event: list[dict] | dict, context: dict) -> list[dict]:
-    """AWS Lambda handler that transforms serialized articles into DynamoDB-ready dicts."""
-    configure_logging()
-    articles = _load_articles_from_s3(event) if isinstance(event, dict) else event
+def upload_articles_to_s3(articles: list[dict], bucket: str, key: str) -> None:
+    """Uploads enriched articles to S3 as a JSON file."""
+    s3_client = boto3.client("s3")
+    s3_client.put_object(
+        Bucket=bucket,
+        Key=key,
+        Body=json.dumps(articles),
+        ContentType="application/json",
+    )
+    logger.info("Uploaded enriched articles to s3://%s/%s", bucket, key)
+
+
+def handler(event: dict, context: dict) -> dict:
+    """AWS Lambda handler that enriches articles and uploads results to S3."""
+    s3_bucket = event.get("s3_bucket", "")
+    s3_key = event.get("s3_key", "")
+
+    articles = load_articles_from_s3(s3_bucket, s3_key)
     logger.info("Enrich handler received %d articles", len(articles))
     ready_articles = prepare_articles_for_dynamodb(articles)
     logger.info("Prepared %d articles for DynamoDB", len(ready_articles))
-    return ready_articles
+
+    at = datetime.now().strftime("%Y-%m-%dT%H:%M")
+    key = f"enriched_articles/{at}.json"
+    upload_articles_to_s3(ready_articles, s3_bucket, key)
+
+    return {"s3_bucket": s3_bucket, "s3_key": key}

@@ -1,16 +1,17 @@
+from datetime import datetime
 from io import BytesIO
 from unittest.mock import patch
 
 import pytest
 from main import (
     clean_source,
-    extract_source_article_id,
-    generate_article_id,
     clean_target_name,
-    extract_target_names,
-    get_text_for_analysis,
-    get_sentiment,
     extract_keywords,
+    extract_source_article_id,
+    extract_target_names,
+    generate_article_id,
+    get_sentiment,
+    get_text_for_analysis,
     handler,
     prepare_article_for_dynamodb,
     prepare_articles_for_dynamodb,
@@ -241,14 +242,24 @@ def test_handler_loads_articles_from_s3_reference():
             "pub_date": "2026-05-21T10:00:00",
         }
     ]
-    ready_articles = [{"article_id": "bbc_news#c9weyz8nk4ro", "target_name": "Taylor Swift"}]
+    ready_articles = [
+        {"article_id": "bbc_news#c9weyz8nk4ro", "target_name": "Taylor Swift"}
+    ]
 
+    fixed_time = datetime(2026, 5, 22, 14, 30)
     with (
         patch("main.boto3.client") as mock_client_factory,
-        patch("main.prepare_articles_for_dynamodb", return_value=ready_articles) as mock_prepare,
+        patch(
+            "main.prepare_articles_for_dynamodb", return_value=ready_articles
+        ) as mock_prepare,
+        patch.dict("os.environ", {"S3_BUCKET_NAME": "bucket"}),
+        patch("main.datetime") as mock_datetime,
     ):
+        mock_datetime.now.return_value = fixed_time
         mock_s3_client = mock_client_factory.return_value
-        mock_s3_client.get_object.return_value = {"Body": BytesIO(raw_articles.encode("utf-8"))}
+        mock_s3_client.get_object.return_value = {
+            "Body": BytesIO(raw_articles.encode("utf-8"))
+        }
 
         result = handler({"s3_bucket": "bucket", "s3_key": "extract/articles.json"}, {})
 
@@ -256,4 +267,7 @@ def test_handler_loads_articles_from_s3_reference():
         Bucket="bucket", Key="extract/articles.json"
     )
     mock_prepare.assert_called_once_with(parsed_articles)
-    assert result == ready_articles
+    assert result == {
+        "s3_bucket": "bucket",
+        "s3_key": "enriched_articles/2026-05-22T14:30.json",
+    }
