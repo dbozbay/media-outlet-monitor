@@ -7,9 +7,10 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "c23-mesopelagic-data-staging"
-    key    = "terraform.tfstate"
-    region = "eu-west-2"
+    bucket  = "c23-mesopelagic-data-staging"
+    key     = "terraform.tfstate"
+    region  = "eu-west-2"
+    encrypt = true
   }
 }
 
