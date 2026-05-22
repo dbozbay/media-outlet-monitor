@@ -2,6 +2,8 @@
 resource "aws_s3_bucket" "articles_bucket" {
   bucket = var.articles_bucket_name
 
+  force_destroy = true
+
   tags = {
     Environment = var.environment
     Service     = var.service_name
