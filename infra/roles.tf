@@ -55,6 +55,14 @@ data "aws_iam_policy_document" "lambda_exec_policy" {
       aws_ecr_repository.repositories["load"].arn
     ]
   }
+
+  statement {
+    actions = [
+      "s3:PutObject",
+      "s3:GetObject"
+    ]
+    resources = ["${aws_s3_bucket.articles_bucket.arn}/*"]
+  }
 }
 
 resource "aws_iam_role_policy" "lambda_exec" {
