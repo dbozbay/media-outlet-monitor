@@ -1,3 +1,4 @@
+from io import BytesIO
 from unittest.mock import MagicMock, patch
 
 from main import handler, load_articles_to_dynamodb
@@ -20,10 +21,19 @@ def test_load_articles_to_dynamodb_puts_each_article(mock_boto3):
 
 
 @patch("main.load_articles_to_dynamodb")
-def test_handler_returns_event(mock_load):
-    event = [{"article_id": "a1", "title": "Test"}]
+@patch("main.boto3.client")
+def test_handler_loads_from_s3_and_calls_load(mock_client_factory, mock_load):
+    articles = [{"article_id": "a1", "title": "Test"}]
+    raw_json = '[{"article_id": "a1", "title": "Test"}]'
+    mock_s3_client = mock_client_factory.return_value
+    mock_s3_client.get_object.return_value = {"Body": BytesIO(raw_json.encode("utf-8"))}
 
-    result = handler(event, {})
+    result = handler(
+        {"s3_bucket": "bucket", "s3_key": "enriched_articles/articles.json"}, {}
+    )
 
-    assert result == event
-    mock_load.assert_called_once_with(event)
+    mock_s3_client.get_object.assert_called_once_with(
+        Bucket="bucket", Key="enriched_articles/articles.json"
+    )
+    mock_load.assert_called_once_with(articles)
+    assert result == {"loaded": 1}

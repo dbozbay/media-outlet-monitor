@@ -1,3 +1,4 @@
+import json
 import logging
 from os import getenv
 
@@ -10,14 +11,12 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 
-def configure_logging() -> None:
-    """Configure root logging. Call once from the entrypoint."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format="{asctime} - {levelname} - {name} - {message}",
-        style="{",
-        datefmt="%Y-%m-%d %H:%M",
-    )
+def load_articles_from_s3(s3_bucket: str, s3_key: str) -> list[dict]:
+    """Loads enriched articles from S3 using the provided bucket and key."""
+    s3_client = boto3.client("s3")
+    response = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
+    body = response["Body"].read().decode("utf-8")
+    return json.loads(body)
 
 
 def load_articles_to_dynamodb(articles: list[dict]) -> None:
@@ -28,10 +27,12 @@ def load_articles_to_dynamodb(articles: list[dict]) -> None:
         table.put_item(Item=article)
 
 
-def handler(event: list[dict], context: dict) -> list[dict]:
+def handler(event: dict, context: dict) -> dict:
     """AWS Lambda handler for the load step."""
-    configure_logging()
-    logger.info("Received event with %d articles to load", len(event))
-    load_articles_to_dynamodb(event)
-    logger.info("Successfully loaded %d articles into DynamoDB", len(event))
-    return event
+    s3_bucket = event.get("s3_bucket", "")
+    s3_key = event.get("s3_key", "")
+    articles = load_articles_from_s3(s3_bucket, s3_key)
+    logger.info("Received %d articles to load", len(articles))
+    load_articles_to_dynamodb(articles)
+    logger.info("Successfully loaded %d articles into DynamoDB", len(articles))
+    return {"loaded": len(articles)}
