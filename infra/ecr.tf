@@ -17,8 +17,8 @@ resource "aws_ecr_repository" "repositories" {
 
 # ECR Lifecycle Policies
 resource "aws_ecr_lifecycle_policy" "repositories" {
-  for_each   = aws_ecr_repository.repositories
-  repository = each.value.name
+  for_each   = var.ecr_repositories
+  repository = aws_ecr_repository.repositories[each.key].name
 
   policy = jsonencode({
     rules = [
