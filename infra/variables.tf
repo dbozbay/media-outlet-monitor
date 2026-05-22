@@ -52,6 +52,12 @@ variable "ecr_repositories" {
   }
 }
 
+variable "articles_bucket_name" {
+  description = "Name of the S3 bucket for intermediate pipeline data"
+  default     = "c23-mesopelagic-articles"
+  type        = string
+}
+
 variable "ecr_image_tag_mutability" {
   description = "Image tag mutability setting for ECR repositories"
   default     = "MUTABLE"

@@ -11,6 +11,12 @@ resource "aws_lambda_function" "extract" {
     command = ["main.handler"]
   }
 
+  environment {
+    variables = {
+      S3_BUCKET_NAME = var.articles_bucket_name
+    }
+  }
+
   tags = {
     Environment = var.environment
     Service     = "media-outlet-monitor"
@@ -29,6 +35,12 @@ resource "aws_lambda_function" "enrich" {
 
   image_config {
     command = ["main.handler"]
+  }
+
+  environment {
+    variables = {
+      S3_BUCKET_NAME = var.articles_bucket_name
+    }
   }
 
   tags = {
