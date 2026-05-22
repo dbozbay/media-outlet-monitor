@@ -3,9 +3,12 @@ BBC UK and OK! RSS News Feed Scraper.
 Fetches and parses articles from BBC News and OK! Magazine RSS feeds.
 """
 
+import json
 import logging
-from datetime import datetime
+import os
+from datetime import datetime, timezone
 
+import boto3
 import feedparser
 import requests
 from bs4 import BeautifulSoup
@@ -135,10 +138,23 @@ def extract_body_text(html: str) -> str:
     return " ".join(paragraph_text)
 
 
-def handler(event: dict, context: dict) -> list[dict]:
-    """Lambda handler that scrapes articles and returns them as JSON-serializable dicts."""
+def handler(event: dict, context: dict) -> dict:
+    """Lambda handler that scrapes articles, uploads to S3, and returns the S3 reference."""
     configure_logging()
     logger.info("Extract handler invoked")
     articles: list[Article] = scrape_articles()
-    logger.info("Returning %d articles", len(articles))
-    return [article.model_dump(mode="json") for article in articles]
+    logger.info("Scraped %d articles, uploading to S3", len(articles))
+
+    bucket = os.environ["S3_BUCKET_NAME"]
+    key = f"extract/{datetime.now(timezone.utc).isoformat()}.json"
+
+    s3_client = boto3.client("s3")
+    s3_client.put_object(
+        Bucket=bucket,
+        Key=key,
+        Body=json.dumps([article.model_dump(mode="json") for article in articles]),
+        ContentType="application/json",
+    )
+
+    logger.info("Uploaded articles to s3://%s/%s", bucket, key)
+    return {"s3_bucket": bucket, "s3_key": key}

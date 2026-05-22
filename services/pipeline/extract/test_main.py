@@ -1,20 +1,20 @@
 import time
 from datetime import datetime
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 import requests
 
 import pytest
-from pydantic import ValidationError
-
 from main import (
     Article,
     convert_time_struct_to_datetime,
+    extract_body_text,
+    fetch_article_body,
     fetch_feed,
+    handler,
     parse_articles,
     scrape_articles,
-    fetch_article_body,
-    extract_body_text,
 )
+from pydantic import ValidationError
 
 
 @pytest.fixture
@@ -191,6 +191,70 @@ def test_fetch_article_body_returns_string_on_success():
     assert isinstance(result, str)
 
 
+class TestHandler:
+    """Tests for the Lambda handler S3 upload behaviour."""
+
+    @pytest.fixture
+    def mock_s3_client(self):
+        """Provides a mocked boto3 S3 client."""
+        with patch("main.boto3.client") as mock_client_factory:
+            mock_client = MagicMock()
+            mock_client_factory.return_value = mock_client
+            yield mock_client
+
+    @pytest.fixture
+    def mock_env(self, monkeypatch):
+        """Sets the S3_BUCKET_NAME environment variable."""
+        monkeypatch.setenv("S3_BUCKET_NAME", "test-bucket")
+
+    @pytest.fixture
+    def mock_articles(self):
+        """Patches scrape_articles to return a fixed list."""
+        articles = [
+            Article(
+                title="Test Article",
+                source="BBC News",
+                link="https://www.bbc.co.uk/news/test-123",
+                summary="A summary",
+                pub_date=datetime(2024, 1, 1, 12, 0, 0),
+                body="Article body text.",
+            )
+        ]
+        with patch("main.scrape_articles", return_value=articles):
+            yield articles
+
+    def test_handler_returns_s3_reference(
+        self, mock_s3_client, mock_env, mock_articles
+    ):
+        result = handler({}, {})
+
+        assert "s3_bucket" in result
+        assert "s3_key" in result
+        assert result["s3_bucket"] == "test-bucket"
+        assert result["s3_key"].startswith("extract/")
+        assert result["s3_key"].endswith(".json")
+
+    def test_handler_uploads_to_s3(self, mock_s3_client, mock_env, mock_articles):
+        handler({}, {})
+
+        mock_s3_client.put_object.assert_called_once()
+        call_kwargs = mock_s3_client.put_object.call_args[1]
+        assert call_kwargs["Bucket"] == "test-bucket"
+        assert call_kwargs["Key"].startswith("extract/")
+        assert call_kwargs["ContentType"] == "application/json"
+
+    def test_handler_upload_contains_serialized_articles(
+        self, mock_s3_client, mock_env, mock_articles
+    ):
+        import json
+
+        handler({}, {})
+
+        call_kwargs = mock_s3_client.put_object.call_args[1]
+        body = json.loads(call_kwargs["Body"])
+        assert len(body) == 1
+        assert body[0]["title"] == "Test Article"
+        assert body[0]["source"] == "BBC News"
 def test_article_body_field_is_required():
     with pytest.raises(ValidationError):
         Article(

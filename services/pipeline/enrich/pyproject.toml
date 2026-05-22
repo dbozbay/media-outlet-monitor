@@ -8,6 +8,7 @@ dependencies = [
     "nltk>=3.9.4",
     "spacy>=3.8.14",
     "en-core-web-sm",
+    "boto3>=1.43.13",
 ]
 
 [tool.uv.sources]
