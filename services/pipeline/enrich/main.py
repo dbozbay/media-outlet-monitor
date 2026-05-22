@@ -56,15 +56,7 @@ def get_text_for_analysis(article: dict) -> str:
 
 def clean_target_name(name: str) -> str:
     """Cleans extracted entity names."""
-    return (
-        name.strip()
-        .strip("'")
-        .strip('"')
-        .strip("’")
-        .strip("“")
-        .strip("”")
-        .strip()
-    )
+    return name.strip(""" '"’“”""")
 
 
 def extract_target_names(text: str) -> list[str]:
