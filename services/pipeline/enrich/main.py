@@ -54,11 +54,34 @@ def get_text_for_analysis(article: dict) -> str:
     return f"{article['title']} {article['summary']} {article['body']}"
 
 
+def clean_target_name(name: str) -> str:
+    """Cleans extracted entity names."""
+    return (
+        name.strip()
+        .strip("'")
+        .strip('"')
+        .strip("’")
+        .strip("“")
+        .strip("”")
+        .strip()
+    )
+
+
 def extract_target_names(text: str) -> list[str]:
-    """Extracts people and organisations using spaCy."""
+    """Extracts and cleans people and organisations using spaCy."""
     doc = nlp(text)
 
-    return list({ent.text for ent in doc.ents if ent.label_ in ["PERSON", "ORG"]})
+    target_names = {
+        clean_target_name(ent.text)
+        for ent in doc.ents
+        if ent.label_ in ["PERSON", "ORG"]
+    }
+
+    return [
+        name
+        for name in target_names
+        if name
+    ]
 
 
 def get_sentiment(text: str) -> tuple[float, str]:
