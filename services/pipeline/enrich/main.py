@@ -84,26 +84,17 @@ def extract_keywords(text: str) -> list[str]:
     keyword_counts = {}
 
     for token in tokens:
-        if (
-            token.isalpha()
-            and token not in stop_words
-            and len(token) > 2
-        ):
+        if token.isalpha() and token not in stop_words and len(token) > 2:
             if token not in keyword_counts:
                 keyword_counts[token] = 1
             else:
                 keyword_counts[token] += 1
 
     sorted_keywords = sorted(
-        keyword_counts.items(),
-        key=lambda item: item[1],
-        reverse=True
+        keyword_counts.items(), key=lambda item: item[1], reverse=True
     )
 
-    return [
-        keyword
-        for keyword, count in sorted_keywords[:10]
-    ]
+    return [keyword for keyword, count in sorted_keywords[:10]]
 
 
 def prepare_article_for_dynamodb(article: dict) -> list[dict]:
@@ -116,10 +107,7 @@ def prepare_article_for_dynamodb(article: dict) -> list[dict]:
     keywords = extract_keywords(text)
 
     if not target_names:
-        logger.info(
-            "Skipping article with no target names: %s",
-            article["title"]
-        )
+        logger.info("Skipping article with no target names: %s", article["title"])
         return []
 
     return [
