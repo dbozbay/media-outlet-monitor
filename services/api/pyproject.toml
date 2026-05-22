@@ -17,6 +17,7 @@ project-includes = [
     "**/*.py*",
     "**/*.ipynb",
 ]
+source-roots = ["."]
 
 [dependency-groups]
 dev = [
